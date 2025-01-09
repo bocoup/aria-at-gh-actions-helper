@@ -6,9 +6,18 @@ import test, { run } from "node:test";
 import wrap from "word-wrap";
 import pLimit from "p-limit";
 import isEqual from "lodash.isequal";
+import { readFile, writeFile } from "node:fs/promises";
+import { Command } from "commander";
 
 const DEBUG = process.env.DEBUG === "true" || process.env.DEBUG === "1";
 const limitWorkflows = pLimit(8);
+const program = new Command()
+  .requiredOption("-o, --owner <string>", "repository owner")
+  .requiredOption("-r, --repo <string>", "repository name")
+  .option("-b, --branch <string>", "Git branch", "main")
+  .option("-f, --results-from-file", "Load results from local 'allResults.json' file");
+program.parse();
+const options = program.opts();
 
 const testPlans = [
   "tests/menu-button-actions-active-descendant",
@@ -22,9 +31,6 @@ const testPlans = [
   "tests/radiogroup-aria-activedescendant",
   "tests/toggle-button",
 ];
-const owner = "bocoup",
-  repo = "aria-at-gh-actions-helper";
-const defaultBranch = "main";
 
 // ordered this way because voiceover usually finishes quicker, and when you only
 // have 3 jobs left it matters... :)
@@ -226,10 +232,10 @@ async function dispatchWorkflowForTestCombo(
   const { workflowId, workflowTestPlan } = testCombo;
   try {
     await octokitClient.actions.createWorkflowDispatch({
-      owner,
-      repo,
+      owner: options.owner,
+      repo: options.repo,
       workflow_id: workflowId,
-      ref: defaultBranch,
+      ref: options.branch,
       inputs: {
         work_dir: workflowTestPlan,
         callback_url: ngrokUrl,
@@ -411,14 +417,12 @@ const octokitClient = new Octokit({
 
 const allResults: Map<TestCombination, CompleteTestComboRunResult> = new Map();
 
-// Debug helper: read the needed "allResults" for this run to a json file
-// import { readFile } from "node:fs/promises";
-// const allResults: Map<TestCombination, CompleteTestComboRunResult> = new Map(
-//  JSON.parse(await readFile("stressor-run.json", "utf-8"))
-// );
-
-
-if (allResults.size == 0) {
+if (options.resultsFromFile) {
+  const data = JSON.parse(await readFile("stressor-run.json", "utf-8"));
+  for (const [key, value] of data) {
+    allResults.set(key, value);
+  }
+} else {
   const logStatusInterval = setInterval(() => {
     // write direct to stderr to not get piped to markdown output.
     process.stderr.write(`Workflow queue status: ${limitWorkflows.activeCount} active, ${limitWorkflows.pendingCount} pending.\n`);
@@ -572,7 +576,6 @@ const formatResultsForMD = (results: Map<TestCombination, CompleteTestComboRunRe
 formatResultsForMD(allResults);
 
 // Debug helper: write the needed "allResults" for this run to a json file
-import { writeFile } from "node:fs/promises";
 await writeFile("stressor-run.json", JSON.stringify([...allResults.entries()]), "utf-8");
 
 process.exit(0);
