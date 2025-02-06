@@ -152,6 +152,12 @@ jobs:
       - name: Configure VoiceOver not to "Automatically Speak Web Page"
         run: defaults write com.apple.VoiceOver4/default SCRCUserDefaultsAutomaticallySpeakWebPage 0
 
+      # Ensure that VoiceOver doesn't automatically read through intrusive system
+      # notifications (such as "Background/Login Item Added" notifications)
+      # https://becomethesolution.com/mac/disable-mac-notification-center-permanently-terminal-command
+      - name: Disable MacOS Notifications 
+        run: launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist; killall NotificationCenter
+
       - name: Log job state RUNNING
         if: inputs.status_url
         run: './report-status.sh RUNNING "\"work_dir\": \"${ARIA_AT_WORK_DIR}\","'
