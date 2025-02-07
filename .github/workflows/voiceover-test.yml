@@ -156,7 +156,7 @@ jobs:
       # notifications (such as "Background/Login Item Added" notifications)
       # https://becomethesolution.com/mac/disable-mac-notification-center-permanently-terminal-command
       - name: Disable MacOS Notifications 
-        run: launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist; killall NotificationCenter
+        run: launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist
 
       - name: Log job state RUNNING
         if: inputs.status_url
