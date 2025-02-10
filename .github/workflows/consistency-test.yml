@@ -1,0 +1,163 @@
+name: Consistency Test
+on:
+  workflow_dispatch:
+    inputs:
+      aria_at_ref:
+        description: |
+          The sha / ref to checkout for aria-at tests
+        required: false
+        type: string
+      nvda_version:
+        description: |
+          The version of NVDA to use for testing
+        required: false
+        type: string
+      macos_version:
+        description: macOS version to run the tests on
+        required: false
+        type: choice
+        options:
+          - "13"
+          - "14"
+        default: "14"
+
+jobs:
+  define-matrix:
+    name: Define Test Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      browsers: ${{ steps.browsers.outputs.browsers }}
+      range: ${{ steps.range.outputs.range }}
+      testPlans: ${{ steps.testPlans.outputs.testPlans }}
+      workflows: ${{ steps.workflows.outputs.workflows }}
+    steps:
+      - name: Define Range
+        id: range
+        run: |
+          echo 'range=[1,2]' >> "$GITHUB_OUTPUT"
+      - name: Define Browsers
+        id: browsers
+        run: |
+          echo 'browsers=["chrome", "firefox", "safari"]' >> "$GITHUB_OUTPUT"
+      - name: Define TestPlans
+        id: testPlans
+        run: |
+          echo 'testPlans=["tests/alert", "tests/modal-dialog"]' >> "$GITHUB_OUTPUT"
+      - name: Define Workflows
+        id: workflows
+        run: |
+          echo 'workflows=["voiceover-test.yml", "nvda-test.yml"]' >> "$GITHUB_OUTPUT"
+
+  run-tests:
+    needs: define-matrix
+    name: Run Test Matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workflow: ${{ fromJSON(needs.define-matrix.outputs.workflows) }}
+        browser: ${{ fromJSON(needs.define-matrix.outputs.browsers) }}
+        testPlan: ${{ fromJSON(needs.define-matrix.outputs.testPlans) }}
+        range: ${{ fromJSON(needs.define-matrix.outputs.range) }}
+        exclude:
+          - browser: "safari"
+            workflow: "nvda-test.yml"
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const workflow = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: '${{ matrix.workflow }}',
+              ref: 'main',
+              inputs: {
+                aria_at_ref: '${{ inputs.aria_at_ref }}',
+                work_dir: '${{ matrix.testPlan }}',
+                browser: '${{ matrix.browser }}',
+                callback_header: `consistency-test:${context.runId}-${{ matrix.range }}`,
+                ...${{ contains(matrix.workflow, 'nvda') }} && {
+                  nvda_version: '${{ inputs.nvda_version }}'
+                },
+                ...${{ contains(matrix.workflow, 'voiceover') }} && {
+                  macos_version: '${{ inputs.macos_version }}'
+                }
+              }
+            });
+            console.log('Dispatched workflow')
+
+            // Poll until workflow completes
+            let status;
+            let retryAttempted = false;
+
+            do {
+              await new Promise(r => setTimeout(r, 30000)); // Wait 30 seconds between checks
+              console.log('Polling workflow status...')
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: '${{ matrix.workflow }}',
+                event: 'workflow_dispatch'
+              });
+
+              const run = runs.data.workflow_runs.find(r =>
+                r.inputs?.callback_header === `consistency-test:${context.runId}-${{ matrix.range }}`
+              );
+
+              console.log('Workflow not found yet');
+              console.log(`But ${runs.data.workflow_runs.length} are running`);
+              runs.data.workflow_runs.forEach((wr) => console.log(wr.inputs?.callback_header));
+
+              if (!run) continue;
+              status = run.status;
+
+              if (run.conclusion && run.conclusion !== 'success') {
+                console.log('Run failed, retrying one more time.')
+                if (!retryAttempted) {
+                  // Retry the specific failed run once
+                  retryAttempted = true;
+                  await github.rest.actions.reRunWorkflowFailedJobs({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    run_id: run.id
+                  });
+                  status = null; // Reset status to continue polling
+                  continue;
+                }
+                throw new Error(`Workflow failed with conclusion: ${run.conclusion} after retry`);
+              }
+            } while (status !== 'completed');
+            console.log('Run completed suceessfully.')
+  compile-results:
+    needs:
+      - define-matrix
+      - run-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v6
+        id: get-run-ids
+        with:
+          script: |
+            const callbackHeaderPrefix = `consistency-test:${context.runId}`;
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: ['voiceover-test.yml', 'nvda-test.yml'],
+              event: 'workflow_dispatch'
+            });
+
+            const matchingRuns = runs.data.workflow_runs
+              .filter(run => run.inputs?.callback_header.startsWith(callbackHeaderPrefix))
+              .map(run => run.id);
+
+            console.log(`Found ${matchingRuns} runs`)
+            return matchingRuns;
+
+      - name: Download artifacts from matching runs
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          run-id: ${{ fromJSON(steps.get-run-ids.outputs.result) }}
+          pattern: "*"
+          path: artifacts-dir
+      - run: ls
