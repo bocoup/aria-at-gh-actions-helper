@@ -471,7 +471,7 @@ if (options.resultsFromFile) {
     allResults.set(key, value);
   }
 } else {
-const failedRunsAtStart = new Set(
+  const failedRunsAtStart = new Set(
     (await fetchFailedRuns()).map((run) => run.id),
   );
 
