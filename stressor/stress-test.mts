@@ -477,16 +477,12 @@ if (options.resultsFromFile) {
 
   const logStatusInterval = setInterval(async () => {
     // write direct to stderr to not get piped to markdown output.
-    process.stderr.write(
-      `Workflow queue status: ${limitWorkflows.activeCount} active, ${limitWorkflows.pendingCount} pending.\n`,
-    );
+    process.stderr.write(`Workflow queue status: ${limitWorkflows.activeCount} active, ${limitWorkflows.pendingCount} pending.\n`);
     const failed = (await fetchFailedRuns()).filter(
       (run) => !failedRunsAtStart.has(run.id),
     );
     for (var run of failed) {
-      process.stderr.write(
-        `Restarting failed run ${run.name}#${run.run_number}: ${run.html_url}`,
-      );
+      process.stderr.write(`Restarting failed run ${run.name}#${run.run_number}: ${run.html_url}\n`);
       await octokitClient.actions.reRunWorkflow({
         owner: options.owner,
         repo: options.repo,
