@@ -475,7 +475,7 @@ const failedRunsAtStart = new Set(
     (await fetchFailedRuns()).map((run) => run.id),
   );
 
-  const logStatusInterval = setInterval(() => {
+  const logStatusInterval = setInterval(async () => {
     // write direct to stderr to not get piped to markdown output.
     process.stderr.write(
       `Workflow queue status: ${limitWorkflows.activeCount} active, ${limitWorkflows.pendingCount} pending.\n`,
