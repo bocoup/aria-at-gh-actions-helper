@@ -447,15 +447,53 @@ const octokitClient = new Octokit({
 
 const allResults: Map<TestCombination, CompleteTestComboRunResult> = new Map();
 
+const fetchFailedRuns = async () => {
+  const workflowIds = [
+    ...new Set(testCombinations.map((combo) => combo.workflowId)),
+  ];
+  const failedRuns = await Promise.all(
+    workflowIds.map(async (workflow_id) => {
+      const response = await octokitClient.actions.listWorkflowRuns({
+        owner: options.owner,
+        repo: options.repo,
+        workflow_id,
+        status: "failure",
+      });
+      return response.data.workflow_runs;
+    }),
+  );
+  return failedRuns.flat();
+};
+
 if (options.resultsFromFile) {
   const data = JSON.parse(await readFile("stressor-run.json", "utf-8"));
   for (const [key, value] of data) {
     allResults.set(key, value);
   }
 } else {
+const failedRunsAtStart = new Set(
+    (await fetchFailedRuns()).map((run) => run.id),
+  );
+
   const logStatusInterval = setInterval(() => {
     // write direct to stderr to not get piped to markdown output.
-    process.stderr.write(`Workflow queue status: ${limitWorkflows.activeCount} active, ${limitWorkflows.pendingCount} pending.\n`);
+    process.stderr.write(
+      `Workflow queue status: ${limitWorkflows.activeCount} active, ${limitWorkflows.pendingCount} pending.\n`,
+    );
+    const failed = (await fetchFailedRuns()).filter(
+      (run) => !failedRunsAtStart.has(run.id),
+    );
+    for (var run of failed) {
+      process.stderr.write(
+        `Restarting failed run ${run.name}#${run.run_number}: ${run.html_url}`,
+      );
+      await octokitClient.actions.reRunWorkflow({
+        owner: options.owner,
+        repo: options.repo,
+        workflow_id: run.workflow_id,
+        run_id: run.id,
+      });
+    }
   }, 60000);
 
   try {
