@@ -82,9 +82,12 @@ steps:
   - checkout: self
     path: helper
     displayName: Checkout aria-at-gh-actions-helper
-  - checkout: aria-at-automation-harness
-    path: helper/aria-at-automation-harness
-    displayName: Checkout aria-at-automation-harness
+  - task: Npm@1
+    displayName: "npm install aria-at-automation-harness"
+    inputs:
+      workingDir: $(helper_dir)
+      command: "custom"
+      customCommand: "install aria-at-automation-harness"
   - checkout: aria-at
     fetchDepth: 0
     path: helper/aria-at
@@ -157,11 +160,6 @@ steps:
       workingDir: $(helper_dir)\aria-at
       command: "custom"
       customCommand: "run build"
-  - task: Npm@1
-    displayName: "aria-at-automation-harness: npm install"
-    inputs:
-      workingDir: $(helper_dir)\aria-at-automation-harness
-      command: "install"
   - task: PowerShell@2
     displayName: Log job state RUNNING
     condition: and(succeeded(), ne(variables.status_url, ''))
