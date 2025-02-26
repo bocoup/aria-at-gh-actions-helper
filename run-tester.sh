@@ -73,7 +73,7 @@ case ${BROWSER} in
     ;;
 esac
 
-node aria-at-automation-harness/bin/host.js run-plan \
+node_modules/.bin/aria-at-harness-host run-plan \
   --plan-workingdir aria-at/build/${ARIA_AT_WORK_DIR} \
   --debug \
   --web-driver-url=${webdriver_url} \
