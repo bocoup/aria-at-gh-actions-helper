@@ -97,6 +97,9 @@ const testingMatrix = [
 
 const workflowHeaderKey = 'x-workflow-key';
 
+const timeAfterNav = 2000;
+const timeDocReady = 3000;
+
 interface WorkflowCallbackPayload {
   status: string;
   testCsvRow?: number;
@@ -297,6 +300,8 @@ async function dispatchWorkflowForTestCombo(
         work_dir: workflowTestPlan,
         callback_url: ngrokUrl,
         status_url: ngrokUrl,
+        timeout_after_nav: timeAfterNav,
+        timeout_after_doc_ready: timeDocReady,
         callback_header: `${workflowHeaderKey}:${getWorkflowRunKey(
           testCombo,
           runIndex

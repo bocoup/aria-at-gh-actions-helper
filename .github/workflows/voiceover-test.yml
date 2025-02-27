@@ -45,6 +45,16 @@ on:
           The browser to use for testing, "chrome" or "firefox" or "safari", default "safari"
         required: false
         type: string
+      timeout_after_nav:
+        description: |
+          Timeout used after navigation to collect and discard speech.
+        required: false
+        type: number
+      timeout_after_doc_ready:
+        description: |
+          Timeout used waiting for document ready (Safari).
+        required: false
+        type: number
       at_driver_server_version:
         description: |
           The version or version range of the macOS AT Driver server to install from npm
