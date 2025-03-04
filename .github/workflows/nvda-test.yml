@@ -75,8 +75,8 @@ env:
   ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
   BROWSER: ${{ inputs.browser || 'chrome' }}
   NVDA_VERSION: ${{ inputs.nvda_version }}
-  TIMEOUT_AFTER_NAV: ${{ inputs.timeout_after_nav || 1000 }}
-  TIMEOUT_AFTER_DOC_READY: ${{ inputs.timeout_after_doc_ready || 2000 }}
+  TIMEOUT_AFTER_NAV: ${{ inputs.timeout_after_nav}}
+  TIMEOUT_AFTER_DOC_READY: ${{ inputs.timeout_after_doc_ready }}
 
 jobs:
   nvda-test:
