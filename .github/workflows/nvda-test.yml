@@ -106,7 +106,7 @@ jobs:
         uses: robinraju/release-downloader@v1.9
         id: nvda-portable-download
         with:
-          repository: "bocoup/aria-at-automation-nvda-builds"
+          repository: "stalgiag/aria-at-automation-nvda-builds"
           tarBall: false
           zipBall: false
           tag: ${{ inputs.nvda_version }}
