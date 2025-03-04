@@ -49,12 +49,12 @@ on:
         description: |
           Timeout used after navigation to collect and discard speech.
         required: false
-        type: number
+        type: string
       timeout_after_doc_ready:
         description: |
           Timeout used waiting for document ready (Safari).
         required: false
-        type: number
+        type: string
       at_driver_server_version:
         description: |
           The version or version range of the macOS AT Driver server to install from npm
@@ -69,8 +69,8 @@ env:
   ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
   BROWSER: ${{ inputs.browser || 'safari' }}
   AT_DRIVER_SERVER_VERSION: ${{ inputs.at_driver_server_version }}
-  TIMEOUT_AFTER_NAV: ${{ inputs.timeout_after_nav || 1000 }}
-  TIMEOUT_AFTER_DOC_READY: ${{ inputs.timeout_after_doc_ready || 2000 }}
+  TIMEOUT_AFTER_NAV: ${{ inputs.timeout_after_nav || '1000' }}
+  TIMEOUT_AFTER_DOC_READY: ${{ inputs.timeout_after_doc_ready || '2000' }}
 
 jobs:
   voiceover-test:
