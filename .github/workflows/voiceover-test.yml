@@ -69,8 +69,8 @@ env:
   ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
   BROWSER: ${{ inputs.browser || 'safari' }}
   AT_DRIVER_SERVER_VERSION: ${{ inputs.at_driver_server_version }}
-  TIMEOUT_AFTER_NAV: ${{ inputs.timeout_after_nav }}
-  TIMEOUT_AFTER_DOC_READY: ${{ inputs.timeout_after_doc_ready }}
+  TIMEOUT_AFTER_NAV: ${{ inputs.timeout_after_nav || '1000' }}
+  TIMEOUT_AFTER_DOC_READY: ${{ inputs.timeout_after_doc_ready || '2000' }}
 
 jobs:
   voiceover-test:
