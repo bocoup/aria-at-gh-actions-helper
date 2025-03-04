@@ -50,12 +50,12 @@ on:
         description: |
           Timeout used after navigation to collect and discard speech.
         required: false
-        type: number
+        type: string
       timeout_after_doc_ready:
         description: |
           Timeout used waiting for document ready (Safari).
         required: false
-        type: number
+        type: string
       nvda_version:
         description: |
           The specific version of NVDA to use (e.g., '2023.1'). If not provided, the latest version will be used.
@@ -75,8 +75,8 @@ env:
   ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
   BROWSER: ${{ inputs.browser || 'chrome' }}
   NVDA_VERSION: ${{ inputs.nvda_version }}
-  TIMEOUT_AFTER_NAV: ${{ inputs.timeout_after_nav}}
-  TIMEOUT_AFTER_DOC_READY: ${{ inputs.timeout_after_doc_ready }}
+  TIMEOUT_AFTER_NAV: ${{ inputs.timeout_after_nav || '1000'}}
+  TIMEOUT_AFTER_DOC_READY: ${{ inputs.timeout_after_doc_ready || '2000' }}
 
 jobs:
   nvda-test:
