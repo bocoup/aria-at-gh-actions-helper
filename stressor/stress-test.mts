@@ -97,8 +97,8 @@ const testingMatrix = [
 
 const workflowHeaderKey = 'x-workflow-key';
 
-const timeAfterNav = 2000;
-const timeDocReady = 3000;
+const timeAfterNav = '2000';
+const timeDocReady = '3000';
 
 interface WorkflowCallbackPayload {
   status: string;
