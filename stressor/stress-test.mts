@@ -8,6 +8,8 @@ import pLimit from 'p-limit';
 import isEqual from 'lodash.isequal';
 import { readFile, writeFile } from 'node:fs/promises';
 import { Command, InvalidArgumentError } from '@commander-js/extra-typings';
+import { createWriteStream, WriteStream } from 'node:fs';
+import { PassThrough } from 'node:stream';
 
 const DEBUG = process.env.DEBUG === 'true' || process.env.DEBUG === '1';
 const limitWorkflows = pLimit(8);
@@ -52,7 +54,17 @@ const program = new Command()
   .option('-b, --branch <string>', 'Git branch', 'main')
   .option(
     '-f, --results-from-file',
-    "Load results from local 'allResults.json' file"
+    'Load results from json file instead of live collection.'
+  )
+  .option(
+    '-j, --json-output <file>',
+    'Write/read results collection data to json file.',
+    'stress-run.json'
+  )
+  .option(
+    '-m, --md-output <file>',
+    "Write output in markdown format to file. A value of '-' indicates STDOUT.",
+    '-'
   )
   .option(
     '-n, --num-runs <int>',
@@ -133,7 +145,6 @@ type ComparisonTestRunResult = {
 };
 
 interface ComparisonRunResult {
-  percentUnequal: number;
   totalRows: number;
   equalRows: number;
   unequalRows: number;
@@ -396,14 +407,11 @@ function checkRunSetResults(runs: Array<WorkflowRun>): ComparisonRunResult {
     comparedResults.push({ testCsvRow, baselineResponses, differences });
   });
 
-  const percentUnequal = ((totalRows - equalRows) / totalRows) * 100;
-
   return {
     comparedResults,
     totalRows: totalRows,
     equalRows: equalRows,
-    unequalRows: totalRows - equalRows,
-    percentUnequal
+    unequalRows: totalRows - equalRows
   };
 }
 
@@ -495,7 +503,7 @@ const fetchFailedRuns = async () => {
 };
 
 if (options.resultsFromFile) {
-  const data = JSON.parse(await readFile('stressor-run.json', 'utf-8'));
+  const data = JSON.parse(await readFile(options.jsonOutput, 'utf-8'));
   for (const [key, value] of data) {
     allResults.set(key, value);
   }
@@ -540,7 +548,25 @@ if (options.resultsFromFile) {
   } finally {
     clearInterval(logStatusInterval);
   }
+
+  // Debug helper: write the needed "allResults" for this run to a json file
+  await writeFile(
+    options.jsonOutput,
+    JSON.stringify([...allResults.entries()]),
+    'utf-8'
+  );
 }
+
+const outputStream = new PassThrough();
+if (options.mdOutput === '-') {
+  outputStream.pipe(process.stdout);
+} else {
+  outputStream.pipe(createWriteStream(options.mdOutput, 'utf-8'));
+}
+
+const output = (text: string) => {
+  outputStream.write(`${text}\n`);
+};
 
 const formatResultsForMD = (
   results: Map<TestCombination, CompleteTestComboRunResult>
@@ -568,7 +594,7 @@ const formatResultsForMD = (
       scoring.workflowBrowser.length;
   keys.sort((a, b) => score(a) - score(b));
 
-  console.log(`# Stress Test Run - Completed ${new Date().toISOString()}\n`);
+  output(`# Stress Test Run - Completed ${new Date().toISOString()}\n`);
 
   const generalSummary = values.reduce(
     (memo, result) => {
@@ -580,23 +606,20 @@ const formatResultsForMD = (
     { totalRuns: 0, totalEqual: 0 }
   );
 
-  console.log(`* __Total Tests:__ ${generalSummary.totalRuns}`);
-  console.log(
-    `* __Total Unequal %:__ ${(((generalSummary.totalRuns - generalSummary.totalEqual) * 100) / generalSummary.totalRuns).toFixed(2)}%`
+  output(`* __Total Tests:__ ${generalSummary.totalRuns}`);
+  output(
+    `* __Total Equal %:__ ${((generalSummary.totalEqual * 100) / generalSummary.totalRuns).toFixed(2)}%`
   );
-  console.log(`* __Number of runs per combo:__ ${options.numRuns}`);
-  console.log(
-    `* __Maximum possible "Unequal %" based on number of runs:__ ${(((options.numRuns - 1) * 100) / options.numRuns).toFixed(2)}%`
-  );
-  console.log(`* __Test Plans:__\n`);
+  output(`* __Number of runs per combo:__ ${options.numRuns}`);
+  output(`* __Test Plans:__\n`);
   for (const plan of testPlans) {
-    console.log(`  * ${plan}`);
+    output(`  * ${plan}`);
   }
-  console.log(`\n* __Test Matrix:__\n`);
+  output(`\n* __Test Matrix:__\n`);
   for (const entry of testingMatrix) {
-    console.log(`  * ${entry.workflowId}`);
+    output(`  * ${entry.workflowId}`);
     for (const browser of entry.browsers) {
-      console.log(`    * ${browser}`);
+      output(`    * ${browser}`);
     }
   }
 
@@ -607,11 +630,9 @@ const formatResultsForMD = (
     by: GenerateBy,
     formatter: Formatter = identity => identity
   ) => {
-    console.log(`\n## Summary by ${displayTitle}\n`);
-    console.log(
-      `| ${displayTitle} | Total Tests | Unequal Responses | Unequal % |`
-    );
-    console.log('| --- | --- | --- | --- |');
+    output(`\n## Summary by ${displayTitle}\n`);
+    output(`| ${displayTitle} | Total Tests | Equal Responses | Equal % |`);
+    output('| --- | --- | --- | --- |');
     const allKeys = new Set(values.map(by));
     for (const key of allKeys) {
       const { totalRuns, totalEqual } = values
@@ -625,9 +646,8 @@ const formatResultsForMD = (
           },
           { totalRuns: 0, totalEqual: 0 }
         );
-      const totalUnequal = totalRuns - totalEqual;
-      console.log(
-        `| ${formatter(key)} | ${totalRuns} | ${totalUnequal} | ${((totalUnequal * 100) / totalRuns).toFixed(2)}% |`
+      output(
+        `| ${formatter(key)} | ${totalRuns} | ${totalEqual} | ${((totalEqual * 100) / totalRuns).toFixed(2)}% |`
       );
     }
   };
@@ -646,17 +666,17 @@ const formatResultsForMD = (
       .replace(/\s+/g, '-')
       .toLowerCase();
 
-  console.log(`\n## Summary by All\n`);
-  console.log(
-    `| Test Plan | AT | Browser | Total Tests | Unequal Responses | Unequal % | Heading Link |`
+  output(`\n## Summary by All\n`);
+  output(
+    `| Test Plan | AT | Browser | Total Tests | Equal Responses | Equal % | Heading Link |`
   );
-  console.log('| --- | --- | --- | --- | --- | --- | --- |');
+  output('| --- | --- | --- | --- | --- | --- | --- |');
   for (const combo of keys) {
     const comboResults = results.get(combo);
     // typescript insists this is possibly undefined
     if (comboResults) {
-      console.log(
-        `| ${comboResults.workflowTestPlan} | ${workflowIdAsLabel(comboResults.workflowId)} | ${comboResults.workflowBrowser} | ${comboResults.totalRows} | ${comboResults.unequalRows} | ${comboResults.percentUnequal.toFixed(2)}% | [#](${generateHeaderLinkForCombo(combo)}) |`
+      output(
+        `| ${comboResults.workflowTestPlan} | ${workflowIdAsLabel(comboResults.workflowId)} | ${comboResults.workflowBrowser} | ${comboResults.totalRows} | ${comboResults.equalRows} | ${((comboResults.equalRows * 100) / comboResults.totalRows).toFixed(2)}% | [#](${generateHeaderLinkForCombo(combo)}) |`
       );
     }
   }
@@ -680,47 +700,47 @@ const formatResultsForMD = (
     const comboResults = results.get(combo);
     // typescript insists this is possibly undefined
     if (comboResults) {
-      console.log(`\n## ${generateHeaderTextForCombo(combo)}\n`);
-      console.log(`\n### Run Logs\n`);
+      output(`\n## ${generateHeaderTextForCombo(combo)}\n`);
+      output(`\n### Run Logs\n`);
       let logNumber = 0;
       for (const url of comboResults.logUrls) {
-        console.log(`* [Run #${logNumber++}](${url})`);
+        output(`* [Run #${logNumber++}](${url})`);
       }
       for (const comparedResult of comboResults.comparedResults) {
-        console.log(`\n### Test Number: ${comparedResult.testCsvRow}\n`);
-        console.log(
+        output(`\n### Test Number: ${comparedResult.testCsvRow}\n`);
+        output(
           `__${combo.workflowTestPlan} ${workflowIdAsLabel(combo.workflowId)} ${combo.workflowBrowser}__`
         );
-        console.log(`#### Most Common Responses:`);
-        console.log('```');
-        console.log(formatResponses(comparedResult.baselineResponses));
-        console.log('```');
+        output(`#### Most Common Responses:`);
+        output('```');
+        output(formatResponses(comparedResult.baselineResponses));
+        output('```');
         for (const diverges of comparedResult.differences) {
-          console.log(
+          output(
             `#### Divergent responses from [Run ${diverges.runId}](${comboResults.logUrls[diverges.runId]}):`
           );
-          console.log('```diff');
-          console.log(
+          output('```diff');
+          output(
             diff(
               formatResponses(comparedResult.baselineResponses),
               formatResponses(diverges.responses)
-            )
+            ) || ''
           );
-          console.log('```');
+          output('```');
         }
       }
     }
-    console.log(``);
+    output(``);
   }
 };
 
 formatResultsForMD(allResults);
 
-// Debug helper: write the needed "allResults" for this run to a json file
-await writeFile(
-  'stressor-run.json',
-  JSON.stringify([...allResults.entries()]),
-  'utf-8'
-);
+if (options.mdOutput !== '-') {
+  await new Promise(resolve => {
+    outputStream.end(() => resolve(true));
+  });
+  console.log(`Wrote markdown report to ${options.mdOutput}`);
+}
 
 process.exit(0);
