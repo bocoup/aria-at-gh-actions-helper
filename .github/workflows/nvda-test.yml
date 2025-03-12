@@ -87,6 +87,7 @@ jobs:
         with:
           repository: "Prime-Access-Consulting/nvda-at-automation"
           path: "nvda-at-automation"
+          ref: 0699f2a
 
       - name: Checkout aria-at ref ${{ inputs.aria_at_ref || 'master' }}
         uses: actions/checkout@v4
