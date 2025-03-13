@@ -59,7 +59,7 @@ const program = new Command()
   .option(
     '-j, --json-output <file>',
     'Write/read results collection data to json file.',
-    'stress-run.json'
+    'stressor-run.json'
   )
   .option(
     '-m, --md-output <file>',
