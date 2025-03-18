@@ -24,6 +24,7 @@ jobs:
         with:
           repository: "Prime-Access-Consulting/nvda-at-automation"
           path: "nvda-at-automation"
+          ref: 0699f2ab4267379d9f05c82916009f9d62c9910a
 
       - name: Checkout aria-at ref 7c9659b2a3ef4536ebad1a980d2708ef006bfabd
         uses: actions/checkout@v4
