@@ -1,84 +1,21 @@
 # This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: nvda-test
-on:
-  workflow_dispatch:
-    inputs:
-      aria_at_ref:
-        description: |
-          The sha / ref to checkout for aria-at tests
-        required: false
-        type: string
-      test_pattern:
-        description: |
-          The test pattern passed to the aria-at-automation harness.
-          Uses a default of "{reference/**,test-*-nvda.*}" if not provided
-        required: false
-        type: string
-      work_dir:
-        description: |
-          The --plan-workingdir passed to the aria-at-automation harness.
-          Based from the aria-at repo build folder.
-          Uses a default of tests/alert if not provided.
-        required: false
-        type: string
-      callback_url:
-        description: |
-          The harness will send POST requests to this url using callback_header
-          header with test results.
-        required: false
-        type: string
-      status_url:
-        description: |
-          The harness will send POST requests to this url using callback_header
-          header with status updates.
-        required: false
-        type: string
-      callback_header:
-        description: |
-          The harness will send POST requests to callback_url using this header
-          with status updates.
-        required: false
-        type: string
-      browser:
-        description: |
-          The browser to use for testing, "chrome" or "firefox", default "chrome"
-        required: false
-        type: string
-      nvda_version:
-        description: |
-          The specific version of NVDA to use (e.g., '2023.1'). If not provided, the latest version will be used.
-        required: false
-        type: string
-
-  # seems if push is enabled, I'm not able to trigger via workflow_dispatch?
-  # push:
-  #   branches:
-  #   - nvda-chrome
-
+name: nvda-test-debug-seek-slider
+on: [push]
 env:
-  ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/alert' }}
-  ARIA_AT_TEST_PATTERN: ${{ inputs.test_pattern || '{reference/**,test-*-nvda.*}'}}
-  ARIA_AT_CALLBACK_URL: ${{ inputs.callback_url }}
-  ARIA_AT_STATUS_URL: ${{ inputs.status_url }}
-  ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
-  BROWSER: ${{ inputs.browser || 'chrome' }}
-  NVDA_VERSION: ${{ inputs.nvda_version }}
+  ARIA_AT_WORK_DIR: 'tests/seek-slider'
+  ARIA_AT_TEST_PATTERN: '{reference/**,test-*-nvda.*}'
+  ARIA_AT_CALLBACK_URL: http://example.com
+  ARIA_AT_STATUS_URL: http://example.com
+  ARIA_AT_CALLBACK_HEADER: 'x-header-param:empty'
+  BROWSER: chrome
+  NVDA_VERSION: '2023.3'
 
 jobs:
   nvda-test:
     runs-on: windows-2022
     steps:
-      - name: Log job state QUEUED
-        shell: powershell
-        if: inputs.status_url
-        run: |
-          $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
-          $headers = @{$headerbits[0]=$headerbits[1]; "Content-Type" = "application/json"}
-          $body = @{'status'='QUEUED'; 'externalLogsUrl'="$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"} | ConvertTo-JSON
-          Invoke-WebRequest $env:ARIA_AT_STATUS_URL -Headers $headers -Method 'POST' -Body $body
-
       # Checkout all repos first (helps cache purposes)
       - uses: actions/checkout@v4
 
@@ -88,12 +25,12 @@ jobs:
           repository: "Prime-Access-Consulting/nvda-at-automation"
           path: "nvda-at-automation"
 
-      - name: Checkout aria-at ref ${{ inputs.aria_at_ref || 'master' }}
+      - name: Checkout aria-at ref 7c9659b2a3ef4536ebad1a980d2708ef006bfabd
         uses: actions/checkout@v4
         with:
           repository: "w3c/aria-at"
           path: "aria-at"
-          ref: ${{ inputs.aria_at_ref || 'master' }}
+          ref: 7c9659b2a3ef4536ebad1a980d2708ef006bfabd
 
       - name: Install the ARIA-AT Automation Harness package
         run: npm install aria-at-automation-harness@"~0.0.1"
@@ -105,8 +42,8 @@ jobs:
           repository: "bocoup/aria-at-automation-nvda-builds"
           tarBall: false
           zipBall: false
-          tag: ${{ inputs.nvda_version }}
-          latest: ${{ inputs.nvda_version == '' }}
+          tag: '2023.3'
+          latest: false
           out-file-path: "nvda-portable"
           extract: false
 
@@ -118,12 +55,8 @@ jobs:
           cache-dependency-path: "**/package-lock.json"
 
       - uses: browser-actions/setup-chrome@v1
-        if: (inputs.browser || 'chrome') == 'chrome'
         with:
           chrome-version: stable
-
-      - uses: browser-actions/setup-firefox@v1
-        if: inputs.browser == 'firefox'
 
       # Installing Scream as a virtual audio driver to avoid exceptions later
       - name: Install Scream (Virtual Audio Driver)
@@ -162,15 +95,6 @@ jobs:
           cd aria-at
           npm run build
 
-      - name: Log job state RUNNING
-        shell: powershell
-        if: inputs.status_url
-        run: |
-          $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
-          $headers = @{$headerbits[0]=$headerbits[1]; "Content-Type" = "application/json"}
-          $body = @{'status'='RUNNING'; 'externalLogsUrl'="$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"; 'work_dir'="$env:ARIA_AT_WORK_DIR"} | ConvertTo-JSON
-          Invoke-WebRequest $env:ARIA_AT_STATUS_URL -Headers $headers -Method 'POST' -Body $body
-
       - name: Run harness
         shell: powershell
         timeout-minutes: 30
@@ -178,24 +102,6 @@ jobs:
           NVDA_PORTABLE_ZIP: ${{ fromJson(steps.nvda-portable-download.outputs.downloaded_files)[0] }}
         run: |
           & .\run-tester.ps1
-
-      - name: Log job state ERROR
-        shell: powershell
-        if: failure() && inputs.status_url
-        run: |
-          $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
-          $headers = @{$headerbits[0]=$headerbits[1]; "Content-Type" = "application/json"}
-          $body = @{'status'='ERROR'; 'externalLogsUrl'="$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"} | ConvertTo-JSON
-          Invoke-WebRequest $env:ARIA_AT_STATUS_URL -Headers $headers -Method 'POST' -Body $body
-
-      - name: Log job state COMPLETED
-        shell: powershell
-        if: success() && inputs.status_url
-        run: |
-          $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
-          $headers = @{$headerbits[0]=$headerbits[1]; "Content-Type" = "application/json"}
-          $body = @{'status'='COMPLETED'; 'externalLogsUrl'="$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"} | ConvertTo-JSON
-          Invoke-WebRequest $env:ARIA_AT_STATUS_URL -Headers $headers -Method 'POST' -Body $body
 
       - name: upload *.{log,png}
         uses: actions/upload-artifact@v4
