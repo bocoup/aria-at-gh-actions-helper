@@ -4,7 +4,7 @@
 name: nvda-test-debug-seek-slider
 on: [push]
 env:
-  ARIA_AT_WORK_DIR: 'tests/seek-slider'
+  ARIA_AT_WORK_DIR: 'tests/alert'
   ARIA_AT_TEST_PATTERN: '{reference/**,test-*-nvda.*}'
   ARIA_AT_CALLBACK_URL: http://example.com
   ARIA_AT_STATUS_URL: http://example.com
