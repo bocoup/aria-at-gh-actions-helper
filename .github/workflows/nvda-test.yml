@@ -98,7 +98,9 @@ jobs:
       - name: Snuff out JS source
         shell: bash
         run: |
+          cat aria-at/build/tests/seek-slider/reference/2021-9-21_14461/slider-seek.setFocusBeforeSlider.html
           echo '<!DOCTYPE html><html lang="en"><body></body></html>' > aria-at/build/tests/seek-slider/reference/2021-9-21_14461/slider-seek.setFocusBeforeSlider.html
+          cat aria-at/build/tests/seek-slider/reference/2021-9-21_14461/slider-seek.setFocusBeforeSlider.html
 
       - name: Run harness
         shell: powershell
