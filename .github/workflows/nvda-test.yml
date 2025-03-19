@@ -4,7 +4,7 @@
 name: nvda-test-debug-seek-slider
 on: [push]
 env:
-  ARIA_AT_WORK_DIR: 'tests/alert'
+  ARIA_AT_WORK_DIR: 'tests/seek-slider'
   ARIA_AT_TEST_PATTERN: '{reference/**,test-*-nvda.*}'
   ARIA_AT_CALLBACK_URL: http://example.com
   ARIA_AT_STATUS_URL: http://example.com
@@ -94,6 +94,11 @@ jobs:
         run: |
           cd aria-at
           npm run build
+
+      - name: Snuff out JS source
+        shell: bash
+        run: |
+          echo '<!DOCTYPE html><html lang="en"><body></body></html>' > aria-at/build/tests/seek-slider/reference/2021-9-21_14461/slider-seek.setFocusBeforeSlider.html
 
       - name: Run harness
         shell: powershell
