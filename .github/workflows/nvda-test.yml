@@ -99,7 +99,7 @@ jobs:
         shell: bash
         run: |
           echo '<!DOCTYPE html><html lang="en"><body>Removed.</body></html>' > aria-at/build/tests/seek-slider/reference/2021-9-21_14462/slider-seek.setFocusBeforeSlider.html
-          echo '<!DOCTYPE html><html lang="en"><body>Removed.</body></html>' > aria-at/build/tests/alert/reference/2022-4-8_144013/alert.setFocusOnButton.html
+          #echo '<!DOCTYPE html><html lang="en"><body>Removed.</body></html>' > aria-at/build/tests/alert/reference/2022-4-8_144013/alert.setFocusOnButton.html
 
       - name: Run harness
         shell: powershell
