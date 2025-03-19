@@ -4,7 +4,7 @@
 name: nvda-test-debug-seek-slider
 on: [push]
 env:
-  ARIA_AT_WORK_DIR: 'tests/seek-slider'
+  ARIA_AT_WORK_DIR: 'tests/alert'
   ARIA_AT_TEST_PATTERN: '{reference/**,test-*-nvda.*}'
   ARIA_AT_CALLBACK_URL: http://example.com
   ARIA_AT_STATUS_URL: http://example.com
@@ -95,13 +95,11 @@ jobs:
           cd aria-at
           npm run build
 
-      - name: Snuff out JS source
+      - name: Snuff out HTML source
         shell: bash
         run: |
-          ls aria-at/build/tests/seek-slider/reference/2021-9-21_14462
-          cat aria-at/build/tests/seek-slider/reference/2021-9-21_14462/slider-seek.setFocusBeforeSlider.html
-          echo '<!DOCTYPE html><html lang="en"><body></body></html>' > aria-at/build/tests/seek-slider/reference/2021-9-21_14462/slider-seek.setFocusBeforeSlider.html
-          cat aria-at/build/tests/seek-slider/reference/2021-9-21_14462/slider-seek.setFocusBeforeSlider.html
+          echo '<!DOCTYPE html><html lang="en"><body>Removed.</body></html>' > aria-at/build/tests/seek-slider/reference/2021-9-21_14462/slider-seek.setFocusBeforeSlider.html
+          echo '<!DOCTYPE html><html lang="en"><body>Removed.</body></html>' > aria-at/build/tests/alert/reference/2022-4-8_144013/alert.setFocusOnButton.html
 
       - name: Run harness
         shell: powershell
