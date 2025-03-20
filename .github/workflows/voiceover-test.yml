@@ -138,6 +138,12 @@ jobs:
       - name: Configure Safari to Allow JavaScript from Apple Events
         run: defaults write -app Safari AllowJavaScriptFromAppleEvents 1
 
+      - name: Configure Safari to Open New Windows with an Empty Page
+        run: defaults write -app Safari NewWindowBehavior 1
+
+      - name: Configure Safari to Open New Tabs with an Empty Page
+        run: defaults write -app Safari NewTabBehavior 1
+
         # Ensure that VoiceOver doesn't automatically read through the entirety of
         # a webpage when its loaded and there isn't immediate keyboard interaction.
         # This is turned on by default for some versions of MacOS
