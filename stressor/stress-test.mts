@@ -2,7 +2,7 @@ import * as http from 'node:http';
 import ngrok from 'ngrok';
 import { Octokit } from '@octokit/rest';
 import { diff } from 'jest-diff';
-import test, { run } from 'node:test';
+import stripAnsi from 'strip-ansi';
 import wrap from 'word-wrap';
 import pLimit from 'p-limit';
 import isEqual from 'lodash.isequal';
@@ -721,9 +721,12 @@ const formatResultsForMD = (
           );
           output('```diff');
           output(
-            diff(
-              formatResponses(comparedResult.baselineResponses),
-              formatResponses(diverges.responses)
+            stripAnsi(
+              diff(
+                formatResponses(comparedResult.baselineResponses),
+                formatResponses(diverges.responses),
+                {}
+              )
             ) || ''
           );
           output('```');
