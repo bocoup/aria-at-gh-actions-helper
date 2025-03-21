@@ -726,8 +726,8 @@ const formatResultsForMD = (
                 formatResponses(comparedResult.baselineResponses),
                 formatResponses(diverges.responses),
                 {}
-              )
-            ) || ''
+              ) || ''
+            )
           );
           output('```');
         }
