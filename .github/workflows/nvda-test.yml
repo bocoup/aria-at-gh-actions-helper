@@ -11,6 +11,7 @@ env:
   ARIA_AT_CALLBACK_HEADER: 'x-header-param:empty'
   BROWSER: chrome
   NVDA_VERSION: '2023.3'
+  RUNNER_DEBUG: true
 
 jobs:
   nvda-test:
