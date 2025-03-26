@@ -4,10 +4,10 @@ $loglocation = $pwd
 
 Write-Output "Log folder $loglocation"
 
-$nvdaParams = ""
+$nvdaParams = "--minimal"
 if ($env:RUNNER_DEBUG)
 {
-  $nvdaParams = "--debug-logging"
+  $nvdaParams = "--debug-logging --minimal"
 }
 [string]$nvdaFolder = [System.IO.Path]::GetDirectoryName($env:NVDA_PORTABLE_ZIP)
 Expand-Archive -Path "$env:NVDA_PORTABLE_ZIP" -DestinationPath "$nvdaFolder"
