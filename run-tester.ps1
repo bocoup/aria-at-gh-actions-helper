@@ -4,15 +4,10 @@ $loglocation = $pwd
 
 Write-Output "Log folder $loglocation"
 
-$nvdaParams = "--minimal"
-if ($env:RUNNER_DEBUG)
-{
-  $nvdaParams = "--debug-logging --minimal"
-}
 [string]$nvdaFolder = [System.IO.Path]::GetDirectoryName($env:NVDA_PORTABLE_ZIP)
 Expand-Archive -Path "$env:NVDA_PORTABLE_ZIP" -DestinationPath "$nvdaFolder"
 Write-Output "Starting NVDA $nvdaVersion - $nvdaFolder\$nvdaVersion\nvda.exe"
-& "$nvdaFolder\$nvdaVersion\nvda.exe" $nvdaParams
+& "$nvdaFolder\$nvdaVersion\nvda.exe" --debug-logging
 
 # Retries to connect to an http url, allowing for any valid "response" (4xx,5xx,etc also valid)
 function Wait-For-HTTP-Response {
