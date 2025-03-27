@@ -69,24 +69,6 @@ switch ($env:BROWSER)
   }
 }
 
-function Trace-Logs {
-  if ($env:RUNNER_DEBUG)
-  {
-    Write-Output "At-Driver job process log:"
-    Receive-Job $atprocess
-    Write-Output "--at-driver.log"
-    Get-Content -Path $loglocation\at-driver.log -ErrorAction Continue
-    Write-Output "WebDriver server job process log:"
-    Receive-Job $webdriverprocess
-    Write-Output "--webdriver.log"
-    Get-Content -Path $loglocation\webdriver.log -ErrorAction Continue
-    Write-Output "--nvda.log"
-    Get-Content -Path $env:TEMP\nvda.log -ErrorAction Continue
-  }
-}
-
-Trace-Logs
-
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 $screens = [Windows.Forms.Screen]::AllScreens
 $top    = ($screens.Bounds.Top    | Measure-Object -Minimum).Minimum
@@ -121,5 +103,3 @@ $bmp.Dispose()
 Set-Location ..
 get-process > .\get-process.log
 Copy-Item -Path $env:TEMP\nvda.log -Destination $loglocation -ErrorAction Continue
-
-Trace-Logs
