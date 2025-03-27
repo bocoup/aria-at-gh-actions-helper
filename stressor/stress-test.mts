@@ -557,18 +557,23 @@ if (options.resultsFromFile) {
   );
 }
 
-const outputStream = new PassThrough();
+const outputStream = new PassThrough({ highWaterMark: 0 });
+let fileStream;
 if (options.mdOutput === '-') {
   outputStream.pipe(process.stdout);
 } else {
-  outputStream.pipe(createWriteStream(options.mdOutput, 'utf-8'));
+  fileStream = createWriteStream(options.mdOutput, 'utf-8');
+  outputStream.pipe(fileStream);
 }
 
-const output = (text: string) => {
-  outputStream.write(`${text}\n`);
+const output = async (text: string) => {
+  let headRoomAvailable = outputStream.write(`${text}\n`);
+  if (!headRoomAvailable) {
+    await new Promise(resolve => outputStream.once('drain', resolve));
+  }
 };
 
-const formatResultsForMD = (
+const formatResultsForMD = async (
   results: Map<TestCombination, CompleteTestComboRunResult>
 ) => {
   const keys = [...results.keys()];
@@ -594,7 +599,7 @@ const formatResultsForMD = (
       scoring.workflowBrowser.length;
   keys.sort((a, b) => score(a) - score(b));
 
-  output(`# Stress Test Run - Completed ${new Date().toISOString()}\n`);
+  await output(`# Stress Test Run - Completed ${new Date().toISOString()}\n`);
 
   const generalSummary = values.reduce(
     (memo, result) => {
@@ -606,33 +611,35 @@ const formatResultsForMD = (
     { totalRuns: 0, totalEqual: 0 }
   );
 
-  output(`* __Total Tests:__ ${generalSummary.totalRuns}`);
-  output(
+  await output(`* __Total Tests:__ ${generalSummary.totalRuns}`);
+  await output(
     `* __Total Equal %:__ ${((generalSummary.totalEqual * 100) / generalSummary.totalRuns).toFixed(2)}%`
   );
-  output(`* __Number of runs per combo:__ ${options.numRuns}`);
-  output(`* __Test Plans:__\n`);
+  await output(`* __Number of runs per combo:__ ${options.numRuns}`);
+  await output(`* __Test Plans:__\n`);
   for (const plan of testPlans) {
-    output(`  * ${plan}`);
+    await output(`  * ${plan}`);
   }
-  output(`\n* __Test Matrix:__\n`);
+  await output(`\n* __Test Matrix:__\n`);
   for (const entry of testingMatrix) {
-    output(`  * ${entry.workflowId}`);
+    await output(`  * ${entry.workflowId}`);
     for (const browser of entry.browsers) {
-      output(`    * ${browser}`);
+      await output(`    * ${browser}`);
     }
   }
 
   type GenerateBy = (arg0: CompleteTestComboRunResult) => string;
   type Formatter = (arg0: string) => string;
-  const generateSummary = (
+  const generateSummary = async (
     displayTitle: string,
     by: GenerateBy,
     formatter: Formatter = identity => identity
   ) => {
-    output(`\n## Summary by ${displayTitle}\n`);
-    output(`| ${displayTitle} | Total Tests | Equal Responses | Equal % |`);
-    output('| --- | --- | --- | --- |');
+    await output(`\n## Summary by ${displayTitle}\n`);
+    await output(
+      `| ${displayTitle} | Total Tests | Equal Responses | Equal % |`
+    );
+    await output('| --- | --- | --- | --- |');
     const allKeys = new Set(values.map(by));
     for (const key of allKeys) {
       const { totalRuns, totalEqual } = values
@@ -646,15 +653,15 @@ const formatResultsForMD = (
           },
           { totalRuns: 0, totalEqual: 0 }
         );
-      output(
+      await output(
         `| ${formatter(key)} | ${totalRuns} | ${totalEqual} | ${((totalEqual * 100) / totalRuns).toFixed(2)}% |`
       );
     }
   };
 
-  generateSummary('Test Plan', result => result.workflowTestPlan);
-  generateSummary('AT', result => result.workflowId, workflowIdAsLabel);
-  generateSummary('Browser', result => result.workflowBrowser);
+  await generateSummary('Test Plan', result => result.workflowTestPlan);
+  await generateSummary('AT', result => result.workflowId, workflowIdAsLabel);
+  await generateSummary('Browser', result => result.workflowBrowser);
 
   const generateHeaderTextForCombo = (combo: TestCombination): string =>
     `${combo.workflowTestPlan} ${workflowIdAsLabel(combo.workflowId)} ${combo.workflowBrowser}`;
@@ -666,16 +673,16 @@ const formatResultsForMD = (
       .replace(/\s+/g, '-')
       .toLowerCase();
 
-  output(`\n## Summary by All\n`);
-  output(
+  await output(`\n## Summary by All\n`);
+  await output(
     `| Test Plan | AT | Browser | Total Tests | Equal Responses | Equal % | Heading Link |`
   );
-  output('| --- | --- | --- | --- | --- | --- | --- |');
+  await output('| --- | --- | --- | --- | --- | --- | --- |');
   for (const combo of keys) {
     const comboResults = results.get(combo);
     // typescript insists this is possibly undefined
     if (comboResults) {
-      output(
+      await output(
         `| ${comboResults.workflowTestPlan} | ${workflowIdAsLabel(comboResults.workflowId)} | ${comboResults.workflowBrowser} | ${comboResults.totalRows} | ${comboResults.equalRows} | ${((comboResults.equalRows * 100) / comboResults.totalRows).toFixed(2)}% | [#](${generateHeaderLinkForCombo(combo)}) |`
       );
     }
@@ -700,46 +707,55 @@ const formatResultsForMD = (
     const comboResults = results.get(combo);
     // typescript insists this is possibly undefined
     if (comboResults) {
-      output(`\n## ${generateHeaderTextForCombo(combo)}\n`);
-      output(`\n### Run Logs\n`);
+      await output(`\n## ${generateHeaderTextForCombo(combo)}\n`);
+      await output(`\n### Run Logs\n`);
       let logNumber = 0;
       for (const url of comboResults.logUrls) {
-        output(`* [Run #${logNumber++}](${url})`);
+        await output(`* [Run #${logNumber++}](${url})`);
       }
       for (const comparedResult of comboResults.comparedResults) {
-        output(`\n### Test Number: ${comparedResult.testCsvRow}\n`);
-        output(
+        await output(`\n### Test Number: ${comparedResult.testCsvRow}\n`);
+        await output(
           `__${combo.workflowTestPlan} ${workflowIdAsLabel(combo.workflowId)} ${combo.workflowBrowser}__`
         );
-        output(`#### Most Common Responses:`);
-        output('```');
-        output(formatResponses(comparedResult.baselineResponses));
-        output('```');
+        await output(`#### Most Common Responses:`);
+        await output('```');
+        await output(formatResponses(comparedResult.baselineResponses));
+        await output('```');
         for (const diverges of comparedResult.differences) {
-          output(
+          await output(
             `#### Divergent responses from [Run ${diverges.runId}](${comboResults.logUrls[diverges.runId]}):`
           );
-          output('```diff');
-          output(
+          await output('```diff');
+          await output(
             diff(
               formatResponses(comparedResult.baselineResponses),
               formatResponses(diverges.responses)
             )
           );
-          output('```');
+          await output('```');
         }
       }
     }
-    output(``);
+    await output(``);
   }
 };
 
-formatResultsForMD(allResults);
+await formatResultsForMD(allResults);
 
-if (options.mdOutput !== '-') {
-  await new Promise(resolve => {
-    outputStream.end(() => resolve(true));
+await new Promise((resolve, reject) => {
+  outputStream.on('finish', resolve);
+  outputStream.on('error', reject);
+  outputStream.end();
+});
+if (fileStream) {
+  await new Promise((resolve, reject) => {
+    fileStream.on('finish', resolve);
+    fileStream.on('error', reject);
+    fileStream.end();
   });
+}
+if (options.mdOutput != '-') {
   console.log(`Wrote markdown report to ${options.mdOutput}`);
 }
 
