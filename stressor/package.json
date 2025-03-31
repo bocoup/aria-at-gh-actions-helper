@@ -5,6 +5,7 @@
   "main": "stress-test.mts",
   "scripts": {
     "cancel-runs": "tsx cancel-all-workflows.mts",
+    "stress-test": "tsx stress-test.mts",
     "test-types": "tsc --noEmit",
     "prettier": "prettier --write \"**/*.{js,jsx,css,mts}\"",
     "prettier:check": "prettier --check \"**/*.{js,jsx,css,mts}\""
