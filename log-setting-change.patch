@@ -1,0 +1,26 @@
+diff --git a/src/runner/driver-test-runner.js b/src/runner/driver-test-runner.js
+index 59228da..824893d 100644
+--- a/src/runner/driver-test-runner.js
++++ b/src/runner/driver-test-runner.js
+@@ -98,12 +98,21 @@ export class DriverTestRunner {
+     // break up the space-separated settings into an array so we can iterate over it
+     const settingsArray = settings.split(' ');
+ 
++    const get = async (prefix) => {
++      await this.atDriver._send({
++        method: 'nvda:settings.getSettings',
++        params: { settings: [{ name: 'virtualBuffers.passThroughAudioIndication' }] },
++      });
++    };
++
+     if (atName == 'NVDA') {
++      await get();
+       // disable the "beeps" when switching focus/browse mode, forces it to speak the mode after switching
+       await this.atDriver._send({
+         method: 'nvda:settings.setSettings',
+         params: { settings: [{ name: 'virtualBuffers.passThroughAudioIndication', value: false }] },
+       });
++      await get();
+ 
+       try {
+         for (const setting of settingsArray) {

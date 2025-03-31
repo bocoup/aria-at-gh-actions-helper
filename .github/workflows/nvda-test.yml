@@ -97,11 +97,18 @@ jobs:
           cd aria-at
           npm run build
 
-      - name: Disable support for mode switching
+      #- name: Disable support for mode switching
+      #  shell: bash
+      #  run: |
+      #    sed -i -e 's/^\(.*async ensureSettings.*\)$/\1 return;/' node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js
+      #    grep 'async ensureSetting' node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js
+
+      - name: Add debugging info
         shell: bash
         run: |
-          sed -i -e 's/^\(.*async ensureSettings.*\)$/\1 return;/' node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js
-          grep 'async ensureSetting' node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js
+          patch \
+            node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js \
+            log-setting-change.patch
 
       - name: Run harness
         shell: powershell
