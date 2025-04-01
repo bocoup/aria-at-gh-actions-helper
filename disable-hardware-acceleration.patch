@@ -1,0 +1,33 @@
+diff --git a/src/runner/browser-driver/create-web-driver.js b/src/runner/browser-driver/create-web-driver.js
+index e9ab531..68c1486 100644
+--- a/src/runner/browser-driver/create-web-driver.js
++++ b/src/runner/browser-driver/create-web-driver.js
+@@ -1,9 +1,27 @@
+ import { Builder } from 'selenium-webdriver';
+ import { until, By } from 'selenium-webdriver';
++import chrome from 'selenium-webdriver/chrome';
+ 
+ /** @returns {Promise<AriaATCIRunner.BrowserDriver>} */
+ export default async (browser, serverUrl) => {
+-  const driver = await new Builder().forBrowser(browser).usingServer(serverUrl).build();
++  const driver = await new Builder()
++    // A completely black browser screen is a commonly-reported symptom of an
++    // issue with hardware acceleration.
++    //
++    // source: https://www.reddit.com/r/browsers/comments/195blkf/hardware_acceleration_enabled_means_constant/?chainedPosts=t3_c53u52
++    // source: https://www.reddit.com/r/chrome/comments/c53u52/chrome_window_turns_completely_black/
++    //
++    // > --disable-gpu
++    // > Disables GPU hardware acceleration. If software renderer is not in
++    // > place, then the GPU process won't launch.
++    //
++    // Source: https://peter.sh/experiments/chromium-command-line-switches/
++    //
++    // https://www.selenium.dev/selenium/docs/api/javascript/module-selenium-webdriver_chrome.html
++    // https://www.selenium.dev/selenium/docs/api/javascript/module-selenium-webdriver_chrome-Options.html
++    .setChromeOptions(new chrome.Options({ args: ['--disable-gpu'] }))
++    .forBrowser(browser)
++    .usingServer(serverUrl).build();
+ 
+   return {
+     async navigate(url) {

@@ -111,6 +111,13 @@ jobs:
             node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js \
             log-setting-change.patch
 
+      - name: Disable hardware acceleration in Chrome
+        shell: bash
+        run: |
+          patch \
+            node_modules/aria-at-automation-harness/src/runner/browser-driver/create-web-driver.js \
+            disable-hardware-acceleration.patch
+
       - name: Run harness
         shell: powershell
         timeout-minutes: 30
