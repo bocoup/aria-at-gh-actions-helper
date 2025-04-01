@@ -56,10 +56,10 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
 
-      #- uses: browser-actions/setup-chrome@v1
-      #  with:
-      #    chrome-version: stable
-      - uses: browser-actions/setup-firefox@v1
+      - uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: 133
+      #- uses: browser-actions/setup-firefox@v1
 
       # Installing Scream as a virtual audio driver to avoid exceptions later
       - name: Install Scream (Virtual Audio Driver)
