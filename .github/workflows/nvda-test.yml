@@ -9,7 +9,7 @@ env:
   ARIA_AT_CALLBACK_URL: http://example.com
   ARIA_AT_STATUS_URL: http://example.com
   ARIA_AT_CALLBACK_HEADER: 'x-header-param:empty'
-  BROWSER: firefox
+  BROWSER: chrome
   NVDA_VERSION: '2023.3'
   RUNNER_DEBUG: true
 
