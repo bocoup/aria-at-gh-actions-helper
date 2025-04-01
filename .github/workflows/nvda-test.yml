@@ -44,7 +44,7 @@ jobs:
           repository: "bocoup/aria-at-automation-nvda-builds"
           tarBall: false
           zipBall: false
-          tag: '2023.3'
+          tag: '2023.3-fixed'
           latest: false
           out-file-path: "nvda-portable"
           extract: false
