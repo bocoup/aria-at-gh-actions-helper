@@ -1,11 +1,14 @@
 diff --git a/src/runner/browser-driver/create-web-driver.js b/src/runner/browser-driver/create-web-driver.js
-index e9ab531..58872ac 100644
+index e9ab531..ae63922 100644
 --- a/src/runner/browser-driver/create-web-driver.js
 +++ b/src/runner/browser-driver/create-web-driver.js
-@@ -1,9 +1,27 @@
+@@ -1,9 +1,30 @@
  import { Builder } from 'selenium-webdriver';
  import { until, By } from 'selenium-webdriver';
 +import chrome from 'selenium-webdriver/chrome.js';
++import * as path from 'node:path';
++
++const chromeLog = path.join(process.cwd(), 'chrome.log')
  
  /** @returns {Promise<AriaATCIRunner.BrowserDriver>} */
  export default async (browser, serverUrl) => {
@@ -25,7 +28,7 @@ index e9ab531..58872ac 100644
 +    //
 +    // https://www.selenium.dev/selenium/docs/api/javascript/module-selenium-webdriver_chrome.html
 +    // https://www.selenium.dev/selenium/docs/api/javascript/module-selenium-webdriver_chrome-Options.html
-+    .setChromeOptions(new chrome.Options().addArguments(['--disable-gpu', '--log-file=chrome.log']))
++    .setChromeOptions(new chrome.Options().addArguments(['--disable-gpu', `--log-file=${chromeLog}`]))
 +    .forBrowser(browser)
 +    .usingServer(serverUrl).build();
  
