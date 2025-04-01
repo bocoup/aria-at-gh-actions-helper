@@ -9,7 +9,7 @@ env:
   ARIA_AT_CALLBACK_URL: http://example.com
   ARIA_AT_STATUS_URL: http://example.com
   ARIA_AT_CALLBACK_HEADER: 'x-header-param:empty'
-  BROWSER: chrome
+  BROWSER: firefox
   NVDA_VERSION: '2023.3'
   RUNNER_DEBUG: true
 
@@ -56,9 +56,10 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
 
-      - uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
+      #- uses: browser-actions/setup-chrome@v1
+      #  with:
+      #    chrome-version: stable
+      - uses: browser-actions/setup-firefox@v1
 
       # Installing Scream as a virtual audio driver to avoid exceptions later
       - name: Install Scream (Virtual Audio Driver)
