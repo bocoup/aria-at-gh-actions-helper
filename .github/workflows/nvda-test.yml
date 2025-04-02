@@ -24,7 +24,7 @@ jobs:
       - name: Start Chrome
         shell: powershell
         run: |
-          for ($trial = 1; $trial -le 5; $trial++) {
+          for ($trial = 1; $trial -le 10; $trial++) {
           mkdir chrome-profile
           $chrome = Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--user-data-dir=./chrome-profile --no-first-run https://example.com" -PassThru
           
