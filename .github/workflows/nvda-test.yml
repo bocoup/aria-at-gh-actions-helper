@@ -24,8 +24,10 @@ jobs:
       - name: Start Chrome
         shell: powershell
         run: |
+          Start-Sleep -Seconds 60
           for ($trial = 1; $trial -le 10; $trial++) {
-          $chrome = Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "https://example.com" -PassThru
+          mkdir chrome-profile
+          $chrome = Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--user-data-dir=./chrome-profile --no-first-run https://example.com" -PassThru
           
           Add-Type -AssemblyName System.Windows.Forms,System.Drawing
           $screens = [Windows.Forms.Screen]::AllScreens
@@ -45,7 +47,16 @@ jobs:
           $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
           $bmp.Save("$pwd\screenshot-$trial-2.png")
           
+          $notepad = Start-Process notepad -PassThru
+          
+          Start-Sleep -Seconds 5
+          
+          $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
+          $bmp.Save("$pwd\screenshot-$trial-3.png")
+          
+          $notepad.Kill()
           $chrome.Kill()
+          rm -r chrome-profile
           }
 
       - name: upload screenshots
