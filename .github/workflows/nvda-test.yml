@@ -17,51 +17,112 @@ jobs:
   nvda-test:
     runs-on: windows-2022
     steps:
+      # Checkout all repos first (helps cache purposes)
+      - uses: actions/checkout@v4
+
+      - name: Checkout nvda-at-automation driver
+        uses: actions/checkout@v4
+        with:
+          repository: "Prime-Access-Consulting/nvda-at-automation"
+          path: "nvda-at-automation"
+          ref: 0699f2ab4267379d9f05c82916009f9d62c9910a
+
+      - name: Checkout aria-at ref 7c9659b2a3ef4536ebad1a980d2708ef006bfabd
+        uses: actions/checkout@v4
+        with:
+          repository: "w3c/aria-at"
+          path: "aria-at"
+          ref: 7c9659b2a3ef4536ebad1a980d2708ef006bfabd
+
+      - name: Install the ARIA-AT Automation Harness package
+        run: npm install aria-at-automation-harness@"~0.0.1"
+
+      - name: Download nvda-portable zip
+        uses: robinraju/release-downloader@v1.9
+        id: nvda-portable-download
+        with:
+          repository: "bocoup/aria-at-automation-nvda-builds"
+          tarBall: false
+          zipBall: false
+          tag: '2023.3'
+          latest: false
+          out-file-path: "nvda-portable"
+          extract: false
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
       - uses: browser-actions/setup-chrome@v1
         with:
-          chrome-version: latest
+          chrome-version: stable
 
-      - name: Start Chrome
+      # Installing Scream as a virtual audio driver to avoid exceptions later
+      - name: Install Scream (Virtual Audio Driver)
         shell: powershell
         run: |
-          Start-Sleep -Seconds 60
-          for ($trial = 1; $trial -le 10; $trial++) {
-          mkdir chrome-profile
-          $chrome = Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--user-data-dir=./chrome-profile --no-first-run https://example.com" -PassThru
-          
-          Add-Type -AssemblyName System.Windows.Forms,System.Drawing
-          $screens = [Windows.Forms.Screen]::AllScreens
-          $top    = ($screens.Bounds.Top    | Measure-Object -Minimum).Minimum
-          $left   = ($screens.Bounds.Left   | Measure-Object -Minimum).Minimum
-          $width  = ($screens.Bounds.Right  | Measure-Object -Maximum).Maximum
-          $height = ($screens.Bounds.Bottom | Measure-Object -Maximum).Maximum
-          $bounds   = [Drawing.Rectangle]::FromLTRB($left, $top, $width, $height)
-          $bmp      = New-Object System.Drawing.Bitmap ([int]$bounds.width), ([int]$bounds.height)
-          $graphics = [Drawing.Graphics]::FromImage($bmp)
-          
-          $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
-          $bmp.Save("$pwd\screenshot-$trial-1.png")
-          
-          Start-Sleep -Seconds 5
-          
-          $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
-          $bmp.Save("$pwd\screenshot-$trial-2.png")
-          
-          $notepad = Start-Process notepad -PassThru
-          
-          Start-Sleep -Seconds 5
-          
-          $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
-          $bmp.Save("$pwd\screenshot-$trial-3.png")
-          
-          $notepad.Kill()
-          $chrome.Kill()
-          rm -r chrome-profile
-          }
+          Start-Service audio*
+          Invoke-WebRequest https://github.com/duncanthrax/scream/releases/download/3.6/Scream3.6.zip -OutFile C:\Scream3.6.zip
+          Expand-Archive -Path C:\Scream3.6.zip -DestinationPath C:\Scream
+          $cert = (Get-AuthenticodeSignature C:\Scream\Install\driver\Scream.sys).SignerCertificate
+          $store = [System.Security.Cryptography.X509Certificates.X509Store]::new("TrustedPublisher", "LocalMachine")
+          $store.Open("ReadWrite")
+          $store.Add($cert)
+          $store.Close()
+          cd C:\Scream\Install\driver
+          C:\Scream\Install\helpers\devcon install Scream.inf *Scream
 
-      - name: upload screenshots
+      - uses: actions/setup-go@v5.3.0
+        with:
+          cache-dependency-path: nvda-at-automation/Server/go.sum
+
+      - name: Compile at-automation driver
+        shell: powershell
+        run: |
+          cd nvda-at-automation\Server
+          go build main\main.go
+
+      - name: "aria-at: npm install"
+        shell: powershell
+        run: |
+          cd aria-at
+          npm install
+
+      - name: "aria-at: npm run build"
+        shell: powershell
+        run: |
+          cd aria-at
+          npm run build
+
+      #- name: Disable support for mode switching
+      #  shell: bash
+      #  run: |
+      #    sed -i -e 's/^\(.*async ensureSettings.*\)$/\1 return;/' node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js
+      #    grep 'async ensureSetting' node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js
+
+      - name: Add debugging info
+        shell: bash
+        run: |
+          patch \
+            node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js \
+            log-setting-change.patch
+
+      - name: Run harness
+        shell: powershell
+        timeout-minutes: 30
+        env:
+          NVDA_PORTABLE_ZIP: ${{ fromJson(steps.nvda-portable-download.outputs.downloaded_files)[0] }}
+        run: |
+          & .\run-tester.ps1
+
+      - name: upload *.{log,png}
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: logs
           path: |
+            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.log
             D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.png
