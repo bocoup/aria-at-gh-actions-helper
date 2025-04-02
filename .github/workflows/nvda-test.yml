@@ -55,6 +55,7 @@ jobs:
           
           $notepad | kill
           $chrome | kill
+          rm -r chrome-profile
           }
 
       - name: upload screenshots
