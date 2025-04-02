@@ -110,6 +110,13 @@ jobs:
             node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js \
             log-setting-change.patch
 
+      - name: Attempt to switch modes many times
+        shell: bash
+        run: |
+          patch \
+            node_modules/aria-at-automation-harness/src/runner/driver-test-runner.js \
+            more-mode-switching-attempts.patch
+
       - name: Run harness
         shell: powershell
         timeout-minutes: 30
