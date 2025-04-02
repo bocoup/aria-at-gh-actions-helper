@@ -21,11 +21,14 @@ jobs:
         with:
           chrome-version: latest
 
-      - name: Take screenshots
+      - name: Start Chrome
         shell: powershell
         run: |
           Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" https://example.com
 
+      - name: Take screenshots
+        shell: powershell
+        run: |
           Add-Type -AssemblyName System.Windows.Forms,System.Drawing
           $screens = [Windows.Forms.Screen]::AllScreens
           $top    = ($screens.Bounds.Top    | Measure-Object -Minimum).Minimum
