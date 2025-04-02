@@ -82,7 +82,6 @@ $graphics = [Drawing.Graphics]::FromImage($bmp)
 $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
 $bmp.Save("$loglocation\test.png")
 
-Start-Sleep -Seconds 120
 
 Write-Output "Launching automation-harness host"
 $hostParams = "--debug"
