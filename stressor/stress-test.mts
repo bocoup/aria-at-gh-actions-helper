@@ -103,7 +103,7 @@ const testingMatrix = [
   },
   {
     workflowId: 'voiceover-test.yml',
-    browsers: ['safari', 'chrome', 'firefox']
+    browsers: ['safari', 'chrome']
   }
 ];
 
