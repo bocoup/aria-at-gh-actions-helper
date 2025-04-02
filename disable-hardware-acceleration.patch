@@ -34,17 +34,3 @@ index e9ab531..ae63922 100644
  
    return {
      async navigate(url) {
-diff --git a/src/runner/driver-test-runner.js b/src/runner/driver-test-runner.js
-index 59228da..c9b9972 100644
---- a/src/runner/driver-test-runner.js
-+++ b/src/runner/driver-test-runner.js
-@@ -97,6 +97,9 @@ export class DriverTestRunner {
-     const { atName } = await this.collectedCapabilities;
-     // break up the space-separated settings into an array so we can iterate over it
-     const settingsArray = settings.split(' ');
-+    this.log(RunnerMessage.AT_DRIVER_COMMS, { direction: 'close', message: 'pausing' });
-+    await new Promise((resolve) => setTimeout(resolve, 1000));
-+    this.log(RunnerMessage.AT_DRIVER_COMMS, { direction: 'close', message: 'done pausing' });
- 
-     if (atName == 'NVDA') {
-       // disable the "beeps" when switching focus/browse mode, forces it to speak the mode after switching
