@@ -53,8 +53,8 @@ jobs:
           $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
           $bmp.Save("$pwd\screenshot-$trial-3.png")
           
-          $notepad | kill
-          $chrome | kill
+          $notepad.Kill()
+          $chrome.Kill()
           rm -r chrome-profile
           }
 
