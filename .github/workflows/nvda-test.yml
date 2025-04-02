@@ -45,6 +45,12 @@ jobs:
           $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
           $bmp.Save("$pwd\screenshot-$trial-2.png")
           
+          Write-Output "Sleeping for 60 seconds..."
+          Start-Sleep -Seconds 60
+          
+          $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
+          $bmp.Save("$pwd\screenshot-$trial-2.png")
+          
           $chrome.Kill()
           }
 
