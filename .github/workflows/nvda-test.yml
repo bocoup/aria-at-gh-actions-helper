@@ -24,7 +24,8 @@ jobs:
       - name: Start Chrome
         shell: powershell
         run: |
-          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--disable-gpu --user-data-dir=. https://example.com"
+          mkdir chrome-profile
+          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--disable-gpu --user-data-dir=./chrome-profile --no-first-run https://example.com"
 
       - name: Take a screenshot
         shell: powershell
