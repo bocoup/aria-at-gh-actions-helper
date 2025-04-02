@@ -26,7 +26,7 @@ jobs:
         run: |
           for ($trial = 1; $trial -le 5; $trial++) {
           mkdir chrome-profile
-          $chrome = Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--user-data-dir=./chrome-profile --no-first-run https://example.com"
+          $chrome = Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--user-data-dir=./chrome-profile --no-first-run https://example.com" -PassThru
           
           Add-Type -AssemblyName System.Windows.Forms,System.Drawing
           $screens = [Windows.Forms.Screen]::AllScreens
@@ -46,7 +46,7 @@ jobs:
           $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
           $bmp.Save("$pwd\screenshot-$trial-2.png")
           
-          $notepad = Start-Process notepad
+          $notepad = Start-Process notepad -PassThru
           
           Start-Sleep -Seconds 5
           
