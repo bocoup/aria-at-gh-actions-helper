@@ -24,7 +24,7 @@ jobs:
       - name: Start Chrome
         shell: powershell
         run: |
-          Start-Process C:\Program Files\Google\Chrome\Application\chrome.exe https://example.com
+          Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" https://example.com
 
       - name: Take a screenshot
         shell: powershell
