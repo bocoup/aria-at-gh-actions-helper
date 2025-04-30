@@ -10,6 +10,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { Command, InvalidArgumentError } from '@commander-js/extra-typings';
 import { createWriteStream, WriteStream } from 'node:fs';
 import { PassThrough } from 'node:stream';
+import formatDuration from './lib/formatDuration.mts';
 
 const DEBUG = process.env.DEBUG === 'true' || process.env.DEBUG === '1';
 const limitWorkflows = pLimit(8);
@@ -715,7 +716,26 @@ const formatResultsForMD = async (
       await output(`\n### Run Logs\n`);
       let logNumber = 0;
       for (const url of comboResults.logUrls) {
-        await output(`* [Run #${logNumber++}](${url})`);
+        const runId = url.slice(url.lastIndexOf('/') + 1);
+        const { data } = await octokitClient.actions.getWorkflowRunUsage({
+          owner: options.owner,
+          repo: options.repo,
+          run_id: parseInt(runId, 10)
+        });
+        const runTime = data.run_duration_ms ?? 0;
+
+        const {
+          data: { run_attempt: attemptNumber = 1 }
+        } = await octokitClient.actions.getWorkflowRun({
+          owner: options.owner,
+          repo: options.repo,
+          run_id: parseInt(runId, 10)
+        });
+        const retries = attemptNumber - 1;
+        const retriesText = retries > 0 ? ` - ${retries} retries` : '';
+        await output(
+          `* [Run #${logNumber++}](${url}) - ${formatDuration(runTime)}${retriesText}`
+        );
       }
       for (const comparedResult of comboResults.comparedResults) {
         await output(`\n### Test Number: ${comparedResult.testCsvRow}\n`);
