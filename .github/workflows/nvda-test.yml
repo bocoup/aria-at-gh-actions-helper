@@ -97,7 +97,7 @@ jobs:
           ref: ${{ inputs.aria_at_ref || 'master' }}
 
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install aria-at-automation-harness@"~0.0.1"
+        run: npm install aria-at-automation-harness@"0.0.3"
 
       - name: Download nvda-portable zip
         uses: robinraju/release-downloader@v1.9
