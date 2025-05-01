@@ -21,15 +21,16 @@ function parseIntOption(value: string, dummyPrevious: number) {
   return parsedValue;
 }
 const defaultTestPlans = [
-  'tests/menu-button-actions-active-descendant',
   'tests/alert',
-  'tests/horizontal-slider',
   'tests/command-button',
   'tests/disclosure-navigation',
+  'tests/horizontal-slider',
   'tests/link-span-text',
-  'tests/modal-dialog',
+  'tests/menu-button-actions-active-descendant',
   'tests/menu-button-navigation',
+  'tests/modal-dialog',
   'tests/radiogroup-aria-activedescendant',
+  'tests/rating-radio-group',
   'tests/toggle-button'
 ];
 function parseTestPlanOption(value: string, previous: string[]) {
