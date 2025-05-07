@@ -50,7 +50,7 @@ on:
           The version or version range of the macOS AT Driver server to install from npm
         required: false
         type: string
-        default: "~0.0.6"
+        default: "~0.1.0"
 
 env:
   ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/alert' }}
@@ -116,7 +116,7 @@ jobs:
           ref: ${{ inputs.aria_at_ref || 'master' }}
 
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install aria-at-automation-harness@"0.0.3"
+        run: npm install aria-at-automation-harness@"~0.0.3"
 
       - name: "aria-at: npm install"
         working-directory: aria-at
