@@ -1,6 +1,6 @@
 import * as http from 'node:http';
 import ngrok from 'ngrok';
-import { Octokit } from '@octokit/rest';
+import { octokitClient } from './lib/octokit.mts';
 import diff from './lib/diff.mts';
 import test, { run } from 'node:test';
 import wrap from 'word-wrap';
@@ -481,10 +481,6 @@ process.on('beforeExit', code => {
   server.close();
   ngrok.kill();
   console.error('Exiting with code: ', code);
-});
-
-const octokitClient = new Octokit({
-  auth: process.env.GITHUB_TOKEN
 });
 
 const allResults: Map<TestCombination, CompleteTestComboRunResult> = new Map();
