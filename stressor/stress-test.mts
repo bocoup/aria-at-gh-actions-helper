@@ -1,6 +1,6 @@
 import * as http from 'node:http';
 import ngrok from 'ngrok';
-import { octokitClient } from './lib/octokit.mts';
+import { githubClient } from './lib/octokit.mts';
 import diff from './lib/diff.mts';
 import test, { run } from 'node:test';
 import wrap from 'word-wrap';
@@ -304,7 +304,7 @@ async function dispatchWorkflowForTestCombo(
 ): Promise<boolean> {
   const { workflowId, workflowTestPlan } = testCombo;
   try {
-    await octokitClient.actions.createWorkflowDispatch({
+    await githubClient.actions.createWorkflowDispatch({
       owner: options.owner,
       repo: options.repo,
       workflow_id: workflowId,
@@ -491,7 +491,7 @@ const fetchFailedRuns = async () => {
   ];
   const failedRuns = await Promise.all(
     workflowIds.map(async workflow_id => {
-      const response = await octokitClient.actions.listWorkflowRuns({
+      const response = await githubClient.actions.listWorkflowRuns({
         owner: options.owner,
         repo: options.repo,
         workflow_id,
@@ -526,7 +526,7 @@ if (options.resultsFromFile) {
       process.stderr.write(
         `Restarting failed run ${run.name}#${run.run_number}: ${run.html_url}\n`
       );
-      await octokitClient.actions.reRunWorkflow({
+      await githubClient.actions.reRunWorkflow({
         owner: options.owner,
         repo: options.repo,
         workflow_id: run.workflow_id,

@@ -3,7 +3,7 @@ import { throttling } from '@octokit/plugin-throttling';
 
 const WithThrottle = Octokit.plugin(throttling);
 
-export const octokitClient = new WithThrottle({
+export const githubClient = new WithThrottle({
   auth: process.env.GITHUB_TOKEN,
   throttle: {
     // param types just guessing to make TS allow it
