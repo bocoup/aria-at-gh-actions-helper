@@ -1,6 +1,6 @@
 import * as http from 'node:http';
 import ngrok from 'ngrok';
-import { Octokit } from '@octokit/rest';
+import { githubClient } from './lib/octokit.mts';
 import diff from './lib/diff.mts';
 import test, { run } from 'node:test';
 import wrap from 'word-wrap';
@@ -304,7 +304,7 @@ async function dispatchWorkflowForTestCombo(
 ): Promise<boolean> {
   const { workflowId, workflowTestPlan } = testCombo;
   try {
-    await octokitClient.actions.createWorkflowDispatch({
+    await githubClient.actions.createWorkflowDispatch({
       owner: options.owner,
       repo: options.repo,
       workflow_id: workflowId,
@@ -483,10 +483,6 @@ process.on('beforeExit', code => {
   console.error('Exiting with code: ', code);
 });
 
-const octokitClient = new Octokit({
-  auth: process.env.GITHUB_TOKEN
-});
-
 const allResults: Map<TestCombination, CompleteTestComboRunResult> = new Map();
 
 const fetchFailedRuns = async () => {
@@ -495,7 +491,7 @@ const fetchFailedRuns = async () => {
   ];
   const failedRuns = await Promise.all(
     workflowIds.map(async workflow_id => {
-      const response = await octokitClient.actions.listWorkflowRuns({
+      const response = await githubClient.actions.listWorkflowRuns({
         owner: options.owner,
         repo: options.repo,
         workflow_id,
@@ -517,7 +513,8 @@ if (options.resultsFromFile) {
     (await fetchFailedRuns()).map(run => run.id)
   );
 
-  const logStatusInterval = setInterval(async () => {
+  let logStatusTimeout: string | NodeJS.Timeout;
+  const logStatus = async () => {
     // write direct to stderr to not get piped to markdown output.
     process.stderr.write(
       `Workflow queue status: ${limitWorkflows.activeCount} active, ${limitWorkflows.pendingCount} pending.\n`
@@ -529,14 +526,18 @@ if (options.resultsFromFile) {
       process.stderr.write(
         `Restarting failed run ${run.name}#${run.run_number}: ${run.html_url}\n`
       );
-      await octokitClient.actions.reRunWorkflow({
+      await githubClient.actions.reRunWorkflow({
         owner: options.owner,
         repo: options.repo,
         workflow_id: run.workflow_id,
         run_id: run.id
       });
     }
-  }, 60000);
+    if (logStatusTimeout != 'stop') {
+      logStatusTimeout = setTimeout(logStatus, 60000);
+    }
+  };
+  logStatusTimeout = setTimeout(logStatus, 60000);
 
   try {
     // Step through testPlans, waiting for those CI runs to finish before the next begin
@@ -551,7 +552,8 @@ if (options.resultsFromFile) {
       })
     );
   } finally {
-    clearInterval(logStatusInterval);
+    clearTimeout(logStatusTimeout);
+    logStatusTimeout = 'stop';
   }
 
   // Debug helper: write the needed "allResults" for this run to a json file
