@@ -67,7 +67,7 @@ env:
   JAWS_VERSION: yes
 
 jobs:
-  nvda-test:
+  jaws-test:
     runs-on: windows-2022
     steps:
       - name: Log job state QUEUED
