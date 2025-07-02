@@ -5,7 +5,7 @@ $loglocation = $pwd
 Write-Output "Log folder $loglocation"
 
 # Retries to connect to an http url, allowing for any valid "response" (4xx,5xx,etc also valid)
-function Wait-For-HTTP-Response {
+function Global:Wait-For-HTTP-Response {
   param (
     $RequestURL
   )
