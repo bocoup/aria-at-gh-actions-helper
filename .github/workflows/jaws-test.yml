@@ -68,6 +68,7 @@ env:
 
 jobs:
   jaws-test:
+    environment: JAWS
     runs-on: windows-2022
     steps:
       - name: Log job state QUEUED
