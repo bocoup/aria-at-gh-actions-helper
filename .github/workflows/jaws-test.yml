@@ -139,7 +139,7 @@ jobs:
       - name: Decrypt JAWS license
         shell: powershell
         env:
-          JAWS_SECRET: ${{ secrets.JAWS_SECRECT }}
+          JAWS_SECRET: ${{ secrets.JAWS_SECRET }}
         run: |
           cd JAWS
           gpg --quiet --batch --yes --decrypt --passphrase="$env:JAWS_SECRET" --output secret_JAWS.lic secret_JAWS.lic.gpg
