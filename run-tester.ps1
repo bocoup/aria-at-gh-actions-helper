@@ -76,11 +76,6 @@ if ($env:NVDA_PORTABLE_ZIP)
   Wait-For-HTTP-Response -RequestURL http://localhost:3031
 }
 
-if($env:JAWS_VERSION)
-{
-  # TODO - download/install/start JAWS here
-}
-
 switch ($env:BROWSER)
 {
   chrome

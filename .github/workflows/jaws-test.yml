@@ -94,21 +94,6 @@ jobs:
       - name: Install the ARIA-AT Automation Harness package
         run: npm install aria-at-automation-harness@"~0.1.0"
 
-      # TODO - Download JAWS maybe? we can also do this in run-tester, but it might
-      # be nice to download it as a separate step.
-
-      # - name: Download nvda-portable zip
-      #   uses: robinraju/release-downloader@v1.9
-      #   id: nvda-portable-download
-      #   with:
-      #     repository: "bocoup/aria-at-automation-nvda-builds"
-      #     tarBall: false
-      #     zipBall: false
-      #     tag: ${{ inputs.nvda_version }}
-      #     latest: ${{ inputs.nvda_version == '' }}
-      #     out-file-path: "nvda-portable"
-      #     extract: false
-
       - name: Use Node.js 20.x
         uses: actions/setup-node@v4
         with:
@@ -150,6 +135,20 @@ jobs:
         run: |
           cd aria-at
           npm run build
+
+      - name: Decrypt JAWS license
+        shell: powershell
+        env:
+          JAWS_SECRET: ${{ secrets.JAWS_SECRECT }}
+        run: |
+          cd JAWS
+          gpg --quiet --batch --yes --decrypt --passphrase="$env:JAWS_SECRET" --output secret_JAWS.lic secret_JAWS.lic.gpg
+
+      - name: Install and start JAWS
+        shell: powershell
+        run: |
+          cd JAWS
+          & .\InstallJAWSUnattended.ps1
 
       - name: Log job state RUNNING
         shell: powershell
