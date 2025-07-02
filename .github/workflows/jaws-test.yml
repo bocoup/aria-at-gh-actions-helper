@@ -62,7 +62,7 @@ on:
 
 env:
   ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/alert' }}
-  ARIA_AT_TEST_PATTERN: ${{ inputs.test_pattern || '{reference/**,test-*-nvda.*}'}}
+  ARIA_AT_TEST_PATTERN: ${{ inputs.test_pattern || '{reference/**,test-*-jaws.*}'}}
   ARIA_AT_CALLBACK_URL: ${{ inputs.callback_url }}
   ARIA_AT_STATUS_URL: ${{ inputs.status_url }}
   ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
