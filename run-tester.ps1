@@ -4,29 +4,6 @@ $loglocation = $pwd
 
 Write-Output "Log folder $loglocation"
 
-if ($env:NVDA_PORTABLE_ZIP)
-{
-  $nvdaParams = ""
-  if ($env:RUNNER_DEBUG)
-  {
-    $nvdaParams = "--debug-logging"
-  }
-  [string]$nvdaFolder = [System.IO.Path]::GetDirectoryName($env:NVDA_PORTABLE_ZIP)
-  Expand-Archive -Path "$env:NVDA_PORTABLE_ZIP" -DestinationPath "$nvdaFolder"
-  Write-Output "Starting NVDA $nvdaVersion - $nvdaFolder\$nvdaVersion\nvda.exe"
-  & "$nvdaFolder\$nvdaVersion\nvda.exe" $nvdaParams
-
-  # Spooky things... If we don't first probe the service like this, the startup of at-driver seems to fail later
-  Write-Output "Waiting for localhost:8765 to start from NVDA"
-  Wait-For-HTTP-Response -RequestURL http://localhost:8765/info
-
-  Write-Output "Starting at-driver"
-  $atprocess = Start-Job -Init ([ScriptBlock]::Create("Set-Location '$pwd\nvda-at-automation\Server'")) -ScriptBlock { & .\main.exe 2>&1 >$using:loglocation\at-driver.log }
-  Write-Output "Waiting for localhost:3031 to start from at-driver"
-  Wait-For-HTTP-Response -RequestURL http://localhost:3031
-
-}
-
 # Retries to connect to an http url, allowing for any valid "response" (4xx,5xx,etc also valid)
 function Wait-For-HTTP-Response {
   param (
