@@ -1,4 +1,4 @@
-$URL = "https://software.vfo.digital/JAWS/2025/2025.2506.168.400/BC70E7A7-B2FA-40DA-A2EC-5595795C65D4/J2025.2506.168.400-enu-x64.exe"
+$URL = "$env:JAWS_VERSION"
 
 # check if we have admin rights
 if (-Not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
@@ -32,7 +32,7 @@ $TargetJAWSFile = $TargetPath + "jfw.exe"
 if (-Not (Test-Path $TargetJAWSFile))
 {
     Write-Host "Installing JAWS from $InstallerDestination..."
-    Start-Process -FilePath $InstallerDestination -Wait 
+    Start-Process -FilePath $InstallerDestination -Wait
     if (-Not (Test-Path $TargetJAWSFile))
     {
         Write-Host "[ ] JAWS installation failed."
@@ -69,8 +69,8 @@ if (-Not (Test-Path $LicenseFileTarget))
         Write-Host "[ ] License source file $LicenseFileSourceFile not found."
         exit 1
     }
-    
-    
+
+
 
     if (-Not (Test-Path $LicenseFileTarget))
     {
@@ -149,7 +149,7 @@ $startTime = Get-Date
 $endTime = (Get-Date).AddSeconds(90)
 while ((Get-Date) -lt $endTime)
 {
-    $tcpConnection = Test-NetConnection -ComputerName "localhost" -Port $port -WarningAction SilentlyContinue 
+    $tcpConnection = Test-NetConnection -ComputerName "localhost" -Port $port -WarningAction SilentlyContinue
     if ($tcpConnection.TcpTestSucceeded)
     {
         $elapsed = (Get-Date) - $startTime

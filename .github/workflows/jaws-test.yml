@@ -46,6 +46,11 @@ on:
           The browser to use for testing, "chrome" or "firefox", default "chrome"
         required: false
         type: string
+      jaws_url:
+        description: |
+          The download URL for the JAWS installer.
+        required: false
+        type: string
 
 # TODO - JAWS specfic version selection param some day
 
@@ -63,12 +68,11 @@ env:
   ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
   BROWSER: ${{ inputs.browser || 'chrome' }}
   # TODO - this should probably be a version number at some point but we will use this ENV
-  # var in run-tester.ps1
-  JAWS_VERSION: yes
+  # var in JAWS\InstallJAWSUnattended.ps1
+  JAWS_VERSION: ${{ inputs.jaws_url || 'https://software.vfo.digital/JAWS/2025/2025.2506.168.400/BC70E7A7-B2FA-40DA-A2EC-5595795C65D4/J2025.2506.168.400-enu-x64.exe' }}
 
 jobs:
   jaws-test:
-    environment: JAWS
     runs-on: windows-2022
     steps:
       - name: Log job state QUEUED
@@ -93,7 +97,7 @@ jobs:
       # TODO - This version of aria-at-automation-harness currently does not include
       # JAWS support, but I should have a fix for this soon.
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install aria-at-automation-harness@"~0.1.0"
+        run: npm install aria-at-automation-harness@"1.0.0"
 
       - name: Use Node.js 20.x
         uses: actions/setup-node@v4

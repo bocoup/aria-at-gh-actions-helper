@@ -139,6 +139,10 @@ $bmp.Dispose()
 
 Set-Location ..
 get-process > .\get-process.log
-Copy-Item -Path $env:TEMP\nvda.log -Destination $loglocation -ErrorAction Continue
+
+if ($env:NVDA_PORTABLE_ZIP)
+{
+  Copy-Item -Path $env:TEMP\nvda.log -Destination $loglocation -ErrorAction Continue
+}
 
 Trace-Logs
