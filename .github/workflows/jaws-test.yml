@@ -157,8 +157,9 @@ jobs:
 
       - name: Zip JAWS install logs
         shell: powershell
+        if: always()
         run: |
-          Compress-Archive -Path "$env:TEMP\J2025*" -CompressionLevel "Fastest" -DestinationPath "D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\JAWS-Install-logs.zip"
+          Compress-Archive -Path "$env:TEMP\J2025*" -CompressionLevel "Fastest" -DestinationPath "D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper-dev\JAWS-Install-logs.zip"
 
       - name: Log job state RUNNING
         shell: powershell
@@ -199,6 +200,6 @@ jobs:
         with:
           name: logs
           path: |
-            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.log
-            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.png
-            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.zip
+            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper-dev\*.log
+            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper-dev\*.png
+            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper-dev\*.zip
