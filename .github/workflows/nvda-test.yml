@@ -204,5 +204,5 @@ jobs:
         with:
           name: logs
           path: |
-            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.log
-            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.png
+            ${{ github.workspace }}\*.log
+            ${{ github.workspace }}\*.png
