@@ -155,6 +155,11 @@ jobs:
           cd JAWS
           & .\InstallJAWSUnattended.ps1
 
+      - name: Zip JAWS install logs
+        shell: powershell
+        run: |
+          Compress-Archive -Path "$env:TEMP\J2025*" -CompressionLevel "Fastest" -DestinationPath "D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\JAWS-Install-logs.zip"
+
       - name: Log job state RUNNING
         shell: powershell
         if: inputs.status_url
@@ -196,3 +201,4 @@ jobs:
           path: |
             D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.log
             D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.png
+            D:\a\aria-at-gh-actions-helper\aria-at-gh-actions-helper\*.zip
