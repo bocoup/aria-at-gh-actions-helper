@@ -1,7 +1,7 @@
 # This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: nvda-test
+name: jaws-test
 on:
   workflow_dispatch:
     inputs:
@@ -46,28 +46,33 @@ on:
           The browser to use for testing, "chrome" or "firefox", default "chrome"
         required: false
         type: string
-      nvda_version:
+      jaws_url:
         description: |
-          The specific version of NVDA to use (e.g., '2023.1'). If not provided, the latest version will be used.
+          The download URL for the JAWS installer.
         required: false
         type: string
 
-  # seems if push is enabled, I'm not able to trigger via workflow_dispatch?
-  # push:
-  #   branches:
-  #   - nvda-chrome
+# TODO - JAWS specfic version selection param some day
+
+      # nvda_version:
+      #   description: |
+      #     The specific version of NVDA to use (e.g., '2023.1'). If not provided, the latest version will be used.
+      #   required: false
+      #   type: string
 
 env:
   ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/alert' }}
-  ARIA_AT_TEST_PATTERN: ${{ inputs.test_pattern || '{reference/**,test-*-nvda.*}'}}
+  ARIA_AT_TEST_PATTERN: ${{ inputs.test_pattern || '{reference/**,test-*-jaws.*}'}}
   ARIA_AT_CALLBACK_URL: ${{ inputs.callback_url }}
   ARIA_AT_STATUS_URL: ${{ inputs.status_url }}
   ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
   BROWSER: ${{ inputs.browser || 'chrome' }}
-  NVDA_VERSION: ${{ inputs.nvda_version }}
+  # TODO - this should probably be a version number at some point but we will use this ENV
+  # var in JAWS\InstallJAWSUnattended.ps1
+  JAWS_VERSION: ${{ inputs.jaws_url || 'https://software.vfo.digital/JAWS/2025/2025.2506.168.400/BC70E7A7-B2FA-40DA-A2EC-5595795C65D4/J2025.2506.168.400-enu-x64.exe' }}
 
 jobs:
-  nvda-test:
+  jaws-test:
     runs-on: windows-2022
     steps:
       - name: Log job state QUEUED
@@ -82,13 +87,6 @@ jobs:
       # Checkout all repos first (helps cache purposes)
       - uses: actions/checkout@v4
 
-      - name: Checkout nvda-at-automation driver
-        uses: actions/checkout@v4
-        with:
-          repository: "Prime-Access-Consulting/nvda-at-automation"
-          path: "nvda-at-automation"
-          ref: 0fc1ce292cd93ddceadc7d7a4a013460fcf6092a
-
       - name: Checkout aria-at ref ${{ inputs.aria_at_ref || 'master' }}
         uses: actions/checkout@v4
         with:
@@ -96,20 +94,10 @@ jobs:
           path: "aria-at"
           ref: ${{ inputs.aria_at_ref || 'master' }}
 
+      # TODO - This version of aria-at-automation-harness currently does not include
+      # JAWS support, but I should have a fix for this soon.
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install aria-at-automation-harness@"~0.1.0"
-
-      - name: Download nvda-portable zip
-        uses: robinraju/release-downloader@v1.9
-        id: nvda-portable-download
-        with:
-          repository: "bocoup/aria-at-automation-nvda-builds"
-          tarBall: false
-          zipBall: false
-          tag: ${{ inputs.nvda_version }}
-          latest: ${{ inputs.nvda_version == '' }}
-          out-file-path: "nvda-portable"
-          extract: false
+        run: npm install aria-at-automation-harness@"1.0.0"
 
       - name: Use Node.js 20.x
         uses: actions/setup-node@v4
@@ -141,16 +129,6 @@ jobs:
           cd C:\Scream\Install\driver
           C:\Scream\Install\helpers\devcon install Scream.inf *Scream
 
-      - uses: actions/setup-go@v5
-        with:
-          cache-dependency-path: nvda-at-automation/Server/go.sum
-
-      - name: Compile at-automation driver
-        shell: powershell
-        run: |
-          cd nvda-at-automation\Server
-          go build main\main.go
-
       - name: "aria-at: npm install"
         shell: powershell
         run: |
@@ -162,6 +140,26 @@ jobs:
         run: |
           cd aria-at
           npm run build
+
+      - name: Decrypt JAWS license
+        shell: powershell
+        env:
+          JAWS_SECRET: ${{ secrets.JAWS_SECRET }}
+        run: |
+          cd JAWS
+          gpg --quiet --batch --yes --decrypt --passphrase="$env:JAWS_SECRET" --output secret_JAWS.lic secret_JAWS.lic.gpg
+
+      - name: Install and start JAWS
+        shell: powershell
+        run: |
+          cd JAWS
+          & .\InstallJAWSUnattended.ps1
+
+      - name: Zip JAWS install logs
+        shell: powershell
+        if: always()
+        run: |
+          Compress-Archive -Path "$env:TEMP\J2025*" -CompressionLevel "Fastest" -DestinationPath "${{ github.workspace }}\JAWS-Install-logs.zip"
 
       - name: Log job state RUNNING
         shell: powershell
@@ -175,8 +173,6 @@ jobs:
       - name: Run harness
         shell: powershell
         timeout-minutes: 30
-        env:
-          NVDA_PORTABLE_ZIP: ${{ fromJson(steps.nvda-portable-download.outputs.downloaded_files)[0] }}
         run: |
           & .\run-tester.ps1
 
@@ -206,3 +202,4 @@ jobs:
           path: |
             ${{ github.workspace }}\*.log
             ${{ github.workspace }}\*.png
+            ${{ github.workspace }}\*.zip
