@@ -33,15 +33,10 @@ function Global:Wait-For-HTTP-Response {
 
 if ($env:NVDA_PORTABLE_ZIP)
 {
-  $nvdaParams = ""
-  if ($env:RUNNER_DEBUG)
-  {
-    $nvdaParams = "--debug-logging"
-  }
   [string]$nvdaFolder = [System.IO.Path]::GetDirectoryName($env:NVDA_PORTABLE_ZIP)
   Expand-Archive -Path "$env:NVDA_PORTABLE_ZIP" -DestinationPath "$nvdaFolder"
   Write-Output "Starting NVDA $nvdaVersion - $nvdaFolder\$nvdaVersion\nvda.exe"
-  & "$nvdaFolder\$nvdaVersion\nvda.exe" $nvdaParams
+  & "$nvdaFolder\$nvdaVersion\nvda.exe" --debug-logging
 
     # Spooky things... If we don't first probe the service like this, the startup of at-driver seems to fail later
   Write-Output "Waiting for localhost:8765 to start from NVDA"
@@ -84,28 +79,6 @@ switch ($env:BROWSER)
   }
 }
 
-function Trace-Logs {
-  if ($env:RUNNER_DEBUG)
-  {
-    if ($env:NVDA_PORTABLE_ZIP)
-    {
-      Write-Output "At-Driver job process log:"
-      Receive-Job $atprocess
-      Write-Output "--at-driver.log"
-      Get-Content -Path $loglocation\at-driver.log -ErrorAction Continue
-      Write-Output "--nvda.log"
-      Get-Content -Path $env:TEMP\nvda.log -ErrorAction Continue
-    }
-    # TODO - JAWS logs?
-    Write-Output "WebDriver server job process log:"
-    Receive-Job $webdriverprocess
-    Write-Output "--webdriver.log"
-    Get-Content -Path $loglocation\webdriver.log -ErrorAction Continue
-  }
-}
-
-Trace-Logs
-
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 $screens = [Windows.Forms.Screen]::AllScreens
 $top    = ($screens.Bounds.Top    | Measure-Object -Minimum).Minimum
@@ -144,5 +117,3 @@ if ($env:NVDA_PORTABLE_ZIP)
 {
   Copy-Item -Path $env:TEMP\nvda.log -Destination $loglocation -ErrorAction Continue
 }
-
-Trace-Logs
