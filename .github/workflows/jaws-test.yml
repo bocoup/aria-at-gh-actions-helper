@@ -73,7 +73,7 @@ env:
 
 jobs:
   jaws-test:
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
       - name: Log job state QUEUED
         shell: powershell
