@@ -720,7 +720,7 @@ const formatResultsForMD = async (
       let logNumber = 0;
       for (const url of comboResults.logUrls) {
         const runId = url.slice(url.lastIndexOf('/') + 1);
-        const { data } = await octokitClient.actions.getWorkflowRunUsage({
+        const { data } = await githubClient.actions.getWorkflowRunUsage({
           owner: options.owner,
           repo: options.repo,
           run_id: parseInt(runId, 10)
@@ -729,7 +729,7 @@ const formatResultsForMD = async (
 
         const {
           data: { run_attempt: attemptNumber = 1 }
-        } = await octokitClient.actions.getWorkflowRun({
+        } = await githubClient.actions.getWorkflowRun({
           owner: options.owner,
           repo: options.repo,
           run_id: parseInt(runId, 10)
