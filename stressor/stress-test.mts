@@ -2,7 +2,6 @@ import * as http from 'node:http';
 import ngrok from 'ngrok';
 import { githubClient } from './lib/octokit.mts';
 import diff from './lib/diff.mts';
-import test, { run } from 'node:test';
 import wrap from 'word-wrap';
 import pLimit from 'p-limit';
 import isEqual from 'lodash.isequal';
@@ -117,6 +116,7 @@ const workflowHeaderKey = 'x-workflow-key';
 
 interface WorkflowCallbackPayload {
   status: string;
+  capabilities?: Capabilities;
   testCsvRow?: number;
   presentationNumber?: number;
   responses?: Array<string>;
@@ -134,8 +134,17 @@ type WorkflowRunResults = Array<{
   testCsvRow: number;
 }>;
 
+type Capabilities = {
+  atName: string;
+  atVersion: string;
+  browserName: string;
+  browserVersion: string;
+  platformName: string;
+};
+
 type WorkflowRun = {
   runLogsUrl: string;
+  capabilities: Capabilities;
   results: WorkflowRunResults;
 };
 
@@ -160,6 +169,7 @@ interface ComparisonRunResult {
 type CompleteTestComboRunResult = ComparisonRunResult &
   TestCombination & {
     logUrls: Array<string>;
+    capabilities: Capabilities;
   };
 
 /**
@@ -237,6 +247,7 @@ async function setUpTestComboCallbackListener(
       runIndex
     )}`;
     const results: WorkflowRunResults = [];
+    let capabilities: Capabilities;
     const requestListener = (
       req: http.IncomingMessage,
       res: http.ServerResponse
@@ -256,6 +267,9 @@ async function setUpTestComboCallbackListener(
             );
             // if results are included, then we collect them
             // if not, then we assume this is a status update and the test plan is done
+            if (parsedBody.capabilities !== undefined) {
+              capabilities = parsedBody.capabilities;
+            }
             if (parsedBody.responses !== undefined) {
               results.push({
                 screenreaderResponses: parsedBody.responses,
@@ -271,7 +285,7 @@ async function setUpTestComboCallbackListener(
                   runIndex
                 )} finished.`
               );
-              resolvePromise({ results, runLogsUrl });
+              resolvePromise({ results, runLogsUrl, capabilities });
               server.removeListener('request', requestListener);
             }
           } else if (parsedBody.status === 'ERROR') {
@@ -449,7 +463,8 @@ const spawnAndCollectWorkflows = async (
   const comboResult: CompleteTestComboRunResult = {
     ...testCombo,
     ...runResultStats,
-    logUrls: runResults.map(run => run.runLogsUrl)
+    logUrls: runResults.map(run => run.runLogsUrl),
+    capabilities: runResults[0].capabilities
   };
   debugLog(`${testComboToString(testCombo)} done`, comboResult);
   allResults.set(testCombo, comboResult);
@@ -636,6 +651,30 @@ const formatResultsForMD = async (
     }
   }
 
+  const ats: Map<string, Set<string>> = new Map();
+  const browsers: Map<string, Set<string>> = new Map();
+  for (const { capabilities } of values) {
+    let set = ats.get(capabilities.atName);
+    if (!set) {
+      set = new Set();
+      ats.set(capabilities.atName, set);
+    }
+    set.add(capabilities.atVersion);
+    set = browsers.get(capabilities.browserName);
+    if (!set) {
+      set = new Set();
+      browsers.set(capabilities.browserName, set);
+    }
+    set.add(capabilities.browserVersion);
+  }
+  await output(`* __Versions Used:__ \n`);
+  for (const pair of ats) {
+    await output(`  * __${pair[0]}__: ${[...pair[1]].join(', ')}`);
+  }
+  for (const pair of browsers) {
+    await output(`  * __${pair[0]}__: ${[...pair[1]].join(', ')}`);
+  }
+
   type GenerateBy = (arg0: CompleteTestComboRunResult) => string;
   type Formatter = (arg0: string) => string;
   const generateSummary = async (
@@ -716,6 +755,13 @@ const formatResultsForMD = async (
     // typescript insists this is possibly undefined
     if (comboResults) {
       await output(`\n## ${generateHeaderTextForCombo(combo)}\n`);
+      await output(
+        `AT: ${comboResults.capabilities?.atName} ${comboResults.capabilities?.atVersion}`
+      );
+      await output(
+        `Browser: ${comboResults.capabilities?.browserName} ${comboResults.capabilities?.browserVersion}`
+      );
+      await output(`Platform: ${comboResults.capabilities.platformName}`);
       await output(`\n### Run Logs\n`);
       let logNumber = 0;
       for (const url of comboResults.logUrls) {
