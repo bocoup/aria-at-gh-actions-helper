@@ -13,7 +13,7 @@ on:
       test_pattern:
         description: |
           The test pattern passed to the aria-at-automation harness.
-          Uses a default of "{reference/**,test-*-nvda.*}" if not provided
+          Uses a default of "{reference/**,test-*-jaws.*}" if not provided
         required: false
         type: string
       work_dir:
