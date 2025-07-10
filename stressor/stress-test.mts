@@ -2,7 +2,6 @@ import * as http from 'node:http';
 import ngrok from 'ngrok';
 import { githubClient } from './lib/octokit.mts';
 import diff from './lib/diff.mts';
-import test, { run } from 'node:test';
 import wrap from 'word-wrap';
 import pLimit from 'p-limit';
 import isEqual from 'lodash.isequal';
@@ -268,8 +267,7 @@ async function setUpTestComboCallbackListener(
             );
             // if results are included, then we collect them
             // if not, then we assume this is a status update and the test plan is done
-            if (parsedBody.capabilities !== undefined)
-            {
+            if (parsedBody.capabilities !== undefined) {
               capabilities = parsedBody.capabilities;
             }
             if (parsedBody.responses !== undefined) {
@@ -466,7 +464,7 @@ const spawnAndCollectWorkflows = async (
     ...testCombo,
     ...runResultStats,
     logUrls: runResults.map(run => run.runLogsUrl),
-    capabilities: runResults[0].capabilities,
+    capabilities: runResults[0].capabilities
   };
   debugLog(`${testComboToString(testCombo)} done`, comboResult);
   allResults.set(testCombo, comboResult);
@@ -655,8 +653,7 @@ const formatResultsForMD = async (
 
   const ats: Map<string, Set<string>> = new Map();
   const browsers: Map<string, Set<string>> = new Map();
-  for (const {capabilities} of values)
-  {
+  for (const { capabilities } of values) {
     let set = ats.get(capabilities.atName);
     if (!set) {
       set = new Set();
@@ -671,12 +668,10 @@ const formatResultsForMD = async (
     set.add(capabilities.browserVersion);
   }
   await output(`* __Versions Used:__ \n`);
-  for (const pair of ats)
-  {
+  for (const pair of ats) {
     await output(`  * __${pair[0]}__: ${[...pair[1]].join(', ')}`);
   }
-  for (const pair of browsers)
-  {
+  for (const pair of browsers) {
     await output(`  * __${pair[0]}__: ${[...pair[1]].join(', ')}`);
   }
 
@@ -760,8 +755,12 @@ const formatResultsForMD = async (
     // typescript insists this is possibly undefined
     if (comboResults) {
       await output(`\n## ${generateHeaderTextForCombo(combo)}\n`);
-      await output(`AT: ${comboResults.capabilities?.atName} ${comboResults.capabilities?.atVersion}`);
-      await output(`Browser: ${comboResults.capabilities?.browserName} ${comboResults.capabilities?.browserVersion}`);
+      await output(
+        `AT: ${comboResults.capabilities?.atName} ${comboResults.capabilities?.atVersion}`
+      );
+      await output(
+        `Browser: ${comboResults.capabilities?.browserName} ${comboResults.capabilities?.browserVersion}`
+      );
       await output(`Platform: ${comboResults.capabilities.platformName}`);
       await output(`\n### Run Logs\n`);
       let logNumber = 0;
