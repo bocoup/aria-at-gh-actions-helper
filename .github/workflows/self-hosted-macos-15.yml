@@ -1,0 +1,162 @@
+name: voiceover-test-self-hosted
+on:
+  workflow_dispatch:
+    inputs:
+      aria_at_ref:
+        description: |
+          The sha / ref to checkout for aria-at tests
+        required: false
+        type: string
+      work_dir:
+        description: |
+          The --plan-workingdir passed to the aria-at-automation harness.
+          Based from the aria-at repo build folder.
+          Uses a default of tests/alert if not provided.
+        required: false
+        type: string
+      callback_url:
+        description: |
+          The harness will send POST requests to this url using callback_header
+          header with test results.
+        required: false
+        type: string
+      status_url:
+        description: |
+          The harness will send POST requests to this url using callback_header
+          header with status updates.
+        required: false
+        type: string
+      callback_header:
+        description: |
+          The harness will send POST requests to callback_url using this header
+          with status updates.
+        required: false
+        type: string
+      macos_version:
+        description: "macOS version to run the test on"
+        required: false
+        type: choice
+        options:
+          - "15"
+        default: "15"
+      browser:
+        description: |
+          The browser to use for testing, "chrome" or "firefox" or "safari", default "safari"
+        required: false
+        type: string
+      at_driver_server_version:
+        description: |
+          The version or version range of the macOS AT Driver server to install from npm
+        required: false
+        type: string
+        default: "~0.1.2"
+
+env:
+  ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/alert' }}
+  ARIA_AT_CALLBACK_URL: ${{ inputs.callback_url }}
+  ARIA_AT_STATUS_URL: ${{ inputs.status_url }}
+  ARIA_AT_CALLBACK_HEADER: ${{ inputs.callback_header || 'x-header-param:empty' }}
+  BROWSER: ${{ inputs.browser || 'safari' }}
+  AT_DRIVER_SERVER_VERSION: ${{ inputs.at_driver_server_version }}
+
+jobs:
+  voiceover-test:
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+      # Checkout all repos first (helps cache purposes)
+      - uses: actions/checkout@v4
+
+      - name: Log job state QUEUED
+        if: inputs.status_url
+        run: ./report-status.sh QUEUED ''
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - uses: browser-actions/setup-chrome@v1
+        if: inputs.browser == 'chrome'
+        with:
+          chrome-version: stable
+          install-chromedriver: true
+
+      - uses: browser-actions/setup-firefox@v1
+        if: inputs.browser == 'firefox'
+
+      - name: Install geckodriver
+        if: inputs.browser == 'firefox'
+        env:
+          token: ${{ secrets.GITHUB_TOKEN }}
+        run: ./install-geckodriver.sh
+
+      - name: Setup Environment
+        uses: guidepup/setup-action@0.16.0
+        with:
+          ignoreTccDb: true
+
+      - name: Install the macOS AT Driver server package
+        run: npm install @bocoup/macos-at-driver-server@"${AT_DRIVER_SERVER_VERSION}"
+
+      - name: Configure the system to support the AT Driver server
+        env:
+          DEBUG: "*"
+        working-directory: node_modules/.bin
+        run: ./at-driver install --unattended
+
+      - name: Add node_modules/.bin to PATH
+        run: echo "$(pwd)/node_modules/.bin" >> $GITHUB_PATH
+
+      - name: Wait for the AT Driver server to be ready
+        working-directory: node_modules/.bin
+        run: ../../wait-for-server.sh
+
+      - name: Checkout aria-at ref ${{ inputs.aria_at_ref || 'master' }}
+        uses: actions/checkout@v4
+        with:
+          repository: "w3c/aria-at"
+          path: "aria-at"
+          ref: ${{ inputs.aria_at_ref || 'master' }}
+
+      - name: Install the ARIA-AT Automation Harness package
+        run: npm install aria-at-automation-harness@"~0.1.0"
+
+      - name: "aria-at: npm install"
+        working-directory: aria-at
+        run: npm install
+
+      - name: "aria-at: npm run build"
+        working-directory: aria-at
+        run: npm run build
+
+      - name: Start VoiceOver
+        run: "/System/Library/CoreServices/VoiceOver.app/Contents/MacOS/VoiceOverStarter"
+
+      - name: Log job state RUNNING
+        if: inputs.status_url
+        run: './report-status.sh RUNNING "\"work_dir\": \"${ARIA_AT_WORK_DIR}\","'
+
+      - name: Run harness
+        run: ./run-tester.sh
+
+      - name: Stop Voiceover
+        run: kill -15 $(ps aux | egrep "[V]oiceOver.app/Contents/MacOS/VoiceOver launchd -s" | awk '{print $2}')
+
+      - name: Log job state ERROR
+        if: failure() && inputs.status_url
+        run: ./report-status.sh ERROR ''
+
+      - name: Log job state COMPLETED
+        if: success() && inputs.status_url
+        run: ./report-status.sh COMPLETED ''
+
+      - name: upload *.{log,png}
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logs
+          path: |
+            *.log
+            *.png
