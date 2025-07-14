@@ -303,7 +303,7 @@ async function dispatchWorkflowForTestCombo(
   testCombo: TestCombination,
   runIndex: number
 ): Promise<boolean> {
-  const { workflowId, workflowTestPlan } = testCombo;
+  const { workflowId, workflowTestPlan, workflowBrowser } = testCombo;
   try {
     await githubClient.actions.createWorkflowDispatch({
       owner: options.owner,
@@ -312,6 +312,7 @@ async function dispatchWorkflowForTestCombo(
       ref: options.branch,
       inputs: {
         work_dir: workflowTestPlan,
+        browser: workflowBrowser,
         callback_url: ngrokUrl,
         status_url: ngrokUrl,
         callback_header: `${workflowHeaderKey}:${getWorkflowRunKey(
