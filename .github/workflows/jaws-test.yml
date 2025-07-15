@@ -94,10 +94,8 @@ jobs:
           path: "aria-at"
           ref: ${{ inputs.aria_at_ref || 'master' }}
 
-      # TODO - This version of aria-at-automation-harness currently does not include
-      # JAWS support, but I should have a fix for this soon.
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install aria-at-automation-harness@"1.0.0"
+        run: npm install @bocoup/aria-at-automation-harness@"1.0.1"
 
       - name: Use Node.js 20.x
         uses: actions/setup-node@v4
