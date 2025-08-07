@@ -69,7 +69,7 @@ env:
   BROWSER: ${{ inputs.browser || 'chrome' }}
   # TODO - this should probably be a version number at some point but we will use this ENV
   # var in JAWS\InstallJAWSUnattended.ps1
-  JAWS_VERSION: ${{ inputs.jaws_url || 'https://software.vfo.digital/JAWS/2025/2025.2507.86.400/151C1CDD-F7B1-4BE2-9E0A-D0A6B043A089/J2025.2507.86.400-enu-x64.exe' }}
+  JAWS_VERSION: ${{ inputs.jaws_url || 'https://software.vfo.digital/JAWS/2025/2025.2507.149.400/92BC0086-61A8-47B4-A662-7D964ED328A2/J2025.2507.149.400-Offline-x64.exe' }}
 
 jobs:
   jaws-test:
@@ -95,7 +95,7 @@ jobs:
           ref: ${{ inputs.aria_at_ref || 'master' }}
 
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install @bocoup/aria-at-automation-harness@"1.0.2"
+        run: npm install https://github.com/w3c/aria-at-automation-harness#startup-settings
 
       - name: Use Node.js 20.x
         uses: actions/setup-node@v4
