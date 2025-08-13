@@ -94,8 +94,10 @@ jobs:
           path: "aria-at"
           ref: ${{ inputs.aria_at_ref || 'master' }}
 
+# for testing specific branch or SHA you can use
+# npm install https://github.com/w3c/aria-at-automation-harness#branch-name
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install https://github.com/w3c/aria-at-automation-harness#startup-settings
+        run: npm install @bocoup/aria-at-automation-harness@1.1.0
 
       - name: Use Node.js 20.x
         uses: actions/setup-node@v4
