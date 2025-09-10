@@ -99,7 +99,7 @@ jobs:
 # for testing specific branch or SHA you can use
 # npm install https://github.com/w3c/aria-at-automation-harness#branch-name
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install https://github.com/w3c/aria-at-automation-harness#nvda-settings-fix
+        run: npm install @bocoup/aria-at-automation-harness@1.1.1
 
       - name: Download nvda-portable zip
         uses: robinraju/release-downloader@v1.9
