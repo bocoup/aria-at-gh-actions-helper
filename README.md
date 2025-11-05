@@ -38,7 +38,9 @@ NVDA then uses the windows version of the `run-tester.ps1`
 ### JAWS
 
 JAWS has at-driver support built in and downloads and uses the builds from JAWS directly.
-This install process happens in JAWS/InstallJawsUnattended.ps1.
+This install process happens in `JAWS/InstallJawsUnattended.ps1`.
+To enable a new version of JAWS to be installed, there is a switch statement at the top of the `InstallJawsUnattended` script that converts the requested version to the URL to download it from JAWS' distribution.
+
 The license file for registration is encoded with gpg using a passphrase. To create the license file:
 
 ```sh
