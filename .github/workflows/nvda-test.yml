@@ -72,7 +72,7 @@ jobs:
     steps:
 
       - name: Log job state QUEUED
-        shell: powershell
+        shell: pwsh
         if: inputs.status_url
         run: |
           $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
@@ -131,7 +131,7 @@ jobs:
 
       # Installing Scream as a virtual audio driver to avoid exceptions later
       - name: Install Scream (Virtual Audio Driver)
-        shell: powershell
+        shell: pwsh
         run: |
           Start-Service audio*
           Invoke-WebRequest https://github.com/duncanthrax/scream/releases/download/3.6/Scream3.6.zip -OutFile C:\Scream3.6.zip
@@ -149,25 +149,25 @@ jobs:
           cache-dependency-path: nvda-at-automation/Server/go.sum
 
       - name: Compile at-automation driver
-        shell: powershell
+        shell: pwsh
         run: |
           cd nvda-at-automation\Server
           go build main\main.go
 
       - name: "aria-at: npm install"
-        shell: powershell
+        shell: pwsh
         run: |
           cd aria-at
           npm install
 
       - name: "aria-at: npm run build"
-        shell: powershell
+        shell: pwsh
         run: |
           cd aria-at
           npm run build
 
       - name: Log job state RUNNING
-        shell: powershell
+        shell: pwsh
         if: inputs.status_url
         run: |
           $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
@@ -176,7 +176,7 @@ jobs:
           Invoke-WebRequest $env:ARIA_AT_STATUS_URL -Headers $headers -Method 'POST' -Body $body
 
       - name: Run harness
-        shell: powershell
+        shell: pwsh
         timeout-minutes: 30
         env:
           NVDA_PORTABLE_ZIP: ${{ fromJson(steps.nvda-portable-download.outputs.downloaded_files)[0] }}
@@ -184,7 +184,7 @@ jobs:
           & .\run-tester.ps1
 
       - name: Log job state ERROR
-        shell: powershell
+        shell: pwsh
         if: failure() && inputs.status_url
         run: |
           $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
@@ -193,7 +193,7 @@ jobs:
           Invoke-WebRequest $env:ARIA_AT_STATUS_URL -Headers $headers -Method 'POST' -Body $body
 
       - name: Log job state COMPLETED
-        shell: powershell
+        shell: pwsh
         if: success() && inputs.status_url
         run: |
           $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2

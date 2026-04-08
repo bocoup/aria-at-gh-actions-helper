@@ -75,7 +75,7 @@ jobs:
     runs-on: windows-2025
     steps:
       - name: Log job state QUEUED
-        shell: powershell
+        shell: pwsh
         if: inputs.status_url
         run: |
           $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
@@ -115,7 +115,7 @@ jobs:
 
       # Installing Scream as a virtual audio driver to avoid exceptions later
       - name: Install Scream (Virtual Audio Driver)
-        shell: powershell
+        shell: pwsh
         run: |
           Start-Service audio*
           Invoke-WebRequest https://github.com/duncanthrax/scream/releases/download/3.6/Scream3.6.zip -OutFile C:\Scream3.6.zip
@@ -129,19 +129,19 @@ jobs:
           C:\Scream\Install\helpers\devcon install Scream.inf *Scream
 
       - name: "aria-at: npm install"
-        shell: powershell
+        shell: pwsh
         run: |
           cd aria-at
           npm install
 
       - name: "aria-at: npm run build"
-        shell: powershell
+        shell: pwsh
         run: |
           cd aria-at
           npm run build
 
       - name: Decrypt JAWS license
-        shell: powershell
+        shell: pwsh
         env:
           JAWS_SECRET: ${{ secrets.JAWS_SECRET }}
         run: |
@@ -149,19 +149,19 @@ jobs:
           gpg --quiet --batch --yes --decrypt --passphrase="$env:JAWS_SECRET" --output secret_JAWS.lic secret_JAWS.lic.gpg
 
       - name: Install and start JAWS
-        shell: powershell
+        shell: pwsh
         run: |
           cd JAWS
           & .\InstallJAWSUnattended.ps1
 
       - name: Zip JAWS install logs
-        shell: powershell
+        shell: pwsh
         if: always()
         run: |
           Compress-Archive -Path "$env:TEMP\J2025*" -CompressionLevel "Fastest" -DestinationPath "${{ github.workspace }}\JAWS-Install-logs.zip"
 
       - name: Log job state RUNNING
-        shell: powershell
+        shell: pwsh
         if: inputs.status_url
         run: |
           $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
@@ -170,13 +170,13 @@ jobs:
           Invoke-WebRequest $env:ARIA_AT_STATUS_URL -Headers $headers -Method 'POST' -Body $body
 
       - name: Run harness
-        shell: powershell
+        shell: pwsh
         timeout-minutes: 30
         run: |
           & .\run-tester.ps1
 
       - name: Log job state ERROR
-        shell: powershell
+        shell: pwsh
         if: failure() && inputs.status_url
         run: |
           $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
@@ -185,7 +185,7 @@ jobs:
           Invoke-WebRequest $env:ARIA_AT_STATUS_URL -Headers $headers -Method 'POST' -Body $body
 
       - name: Log job state COMPLETED
-        shell: powershell
+        shell: pwsh
         if: success() && inputs.status_url
         run: |
           $headerbits = $env:ARIA_AT_CALLBACK_HEADER -split ":\s*", 2
