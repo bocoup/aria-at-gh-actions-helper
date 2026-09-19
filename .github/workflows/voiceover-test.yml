@@ -71,10 +71,10 @@ jobs:
         if: inputs.status_url
         run: ./report-status.sh QUEUED ''
 
-      - name: Use Node.js 20.x
+      - name: Use Node.js 24.x
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 24.x
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
 
@@ -116,7 +116,7 @@ jobs:
           ref: ${{ inputs.aria_at_ref || 'master' }}
 
       - name: Install the ARIA-AT Automation Harness package
-        run: npm install aria-at-automation-harness@"~0.1.0"
+        run: npm install @bocoup/aria-at-automation-harness@"^1.0.0"
 
       - name: "aria-at: npm install"
         working-directory: aria-at
@@ -144,12 +144,18 @@ jobs:
       - name: Configure Safari to Open New Tabs with an Empty Page
         run: defaults write -app Safari NewTabBehavior 1
 
-        # Ensure that VoiceOver doesn't automatically read through the entirety of
-        # a webpage when its loaded and there isn't immediate keyboard interaction.
-        # This is turned on by default for some versions of MacOS
-        # https://support.apple.com/guide/voiceover/general-cpvouwebpageloading/mac
+        # macOS 15+ stores VoiceOver preferences in a sandboxed Group
+        # Containers location, so the sandboxed plist is patched directly too.
       - name: Configure VoiceOver not to "Automatically Speak Web Page"
-        run: defaults write com.apple.VoiceOver4/default SCRCUserDefaultsAutomaticallySpeakWebPage 0
+        run: |
+          defaults write com.apple.VoiceOver4/default SCRCUserDefaultsAutomaticallySpeakWebPage 0
+          defaults write com.apple.VoiceOver4/default SCRCUserDefaultsAutomaticallySpeakWebPageSummary 0
+
+          sandboxed_plist="$HOME/Library/Group Containers/group.com.apple.VoiceOver/Library/Preferences/com.apple.VoiceOver4/default.plist"
+          if [ -f "$sandboxed_plist" ]; then
+            plutil -replace SCRCUserDefaultsAutomaticallySpeakWebPage -bool NO "$sandboxed_plist"
+            plutil -replace SCRCUserDefaultsAutomaticallySpeakWebPageSummary -bool NO "$sandboxed_plist"
+          fi
 
       - name: Log job state RUNNING
         if: inputs.status_url
