@@ -37,9 +37,9 @@ on:
         required: false
         type: choice
         options:
-          - "13"
-          - "14"
-        default: "14"
+          - "15"
+          - "26"
+        default: "15"
       browser:
         description: |
           The browser to use for testing, "chrome" or "firefox" or "safari", default "safari"
@@ -50,7 +50,7 @@ on:
           The version or version range of the macOS AT Driver server to install from npm
         required: false
         type: string
-        default: "~0.1.0"
+        default: "0.1.2"
 
 env:
   ARIA_AT_WORK_DIR: ${{ inputs.work_dir || 'tests/apg/alert' }}
@@ -93,7 +93,7 @@ jobs:
         run: ./install-geckodriver.sh
 
       - name: Setup Environment
-        uses: guidepup/setup-action@0.16.0
+        uses: guidepup/setup-action@0.21.0
 
       - name: Install the macOS AT Driver server package
         run: npm install @bocoup/macos-at-driver-server@"${AT_DRIVER_SERVER_VERSION}"
@@ -150,12 +150,6 @@ jobs:
         # https://support.apple.com/guide/voiceover/general-cpvouwebpageloading/mac
       - name: Configure VoiceOver not to "Automatically Speak Web Page"
         run: defaults write com.apple.VoiceOver4/default SCRCUserDefaultsAutomaticallySpeakWebPage 0
-
-      # Ensure that VoiceOver doesn't automatically read through intrusive system
-      # notifications (such as "Background/Login Item Added" notifications)
-      # https://becomethesolution.com/mac/disable-mac-notification-center-permanently-terminal-command
-      - name: Disable MacOS Notifications
-        run: launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist
 
       - name: Log job state RUNNING
         if: inputs.status_url
